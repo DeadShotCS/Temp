@@ -5,17 +5,41 @@ Java.perform(function() {
     // --- Configuration ---
     // Classes on this blacklist will be skipped entirely.
     var blacklistedClasses = [
-        "java.lang.Class",
-        "java.lang.String",
-        "android.os.Handler",
-        "com.google.android.gms." // Example: Skip Google Play Services classes
+    // --- Common Android/Java Core Libraries ---
+    "java.lang.Class",          // Very unstable to hook, causes crashes
+    "java.lang.ClassLoader",    // Can interfere with class loading
+    "java.lang.reflect.",       // Reflection classes are often brittle
+    // "java.io.",                 // I/O operations can be sensitive
+    // "java.nio.",                // NIO is also a common source of instability
+    // "java.util.concurrent.",    // Concurrency classes are risky to hook
+    // "android.content.",         // Core Android components
+    // "android.os.",              // Operating system utilities and IPC
+    // "android.view.",            // UI-related classes
+    // "android.app.",             // Application lifecycle classes
+    // "com.android.internal.",    // Internal Android framework code
+    // "dalvik.system.",           // Dalvik/ART runtime classes
+
+    // --- Common Third-Party Libraries ---
+    // "com.google.android.gms.",  // Google Play Services
+    // "com.google.firebase.",     // Firebase services
+    // "com.facebook.ads.",        // Facebook ad SDKs
+    // "okhttp3.",                 // Common networking library
+    // "retrofit2.",               // REST client
+    // "rx.internal.",             // RxJava internal classes
+    // "io.reactivex.internal.",   // RxJava 2/3 internal classes
+    // "kotlin.coroutines.",       // Kotlin coroutines
+    // "kotlinx.coroutines.",      // Coroutines framework
+
+    // --- Obfuscated Code ---
+    // A-B-C packages often indicate heavily obfuscated code
+    // "a.",
+    // "b.",
+    // "c."
     ];
 
     // If this list is not empty, only these classes/methods will be hooked.
     // Format: "com.your.package.ClassName" or "com.your.package.ClassName.methodName"
     var whitelistedClassesAndFunctions = [
-        "com.your.package.LoginManager",
-        "com.your.package.NetworkUtils.makeRequest"
     ];
 
     // --- Helper function to stringify a Java object and its fields
