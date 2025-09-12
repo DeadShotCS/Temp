@@ -396,3 +396,110 @@ In the Windows kernel, the Shadow Stack is a key component of **Kernel Control F
 ## VI. Conclusion
 
 The Windows kernel is a layered system where intricate, interconnected data structures facilitate memory management and security. The `_MMPFN` database tracks physical memory, while the `_HARDWARE_PTE` enables virtual-to-physical address translation. The `_MMVAD` tree organizes a process's virtual address space, and its relationship with `_SECTION` and `_SEGMENT` structures enables shared memory and efficient file mapping. This design is extended and fortified by VBS, which uses the Hyper-V hypervisor and Second Level Address Translation (SLAT) to create isolated Virtual Trust Levels (VTLs). The Secure Kernel (VTL1) and its conceptual data structures, such as `_SECURE_IMAGE` and `_SECURE_SECTION`, leverage this hardware-enforced isolation to protect sensitive code and data from a potentially compromised VTL0. This is demonstrated by the implementation of the Shadow Stack, where the Secure Kernel uses SLAT to apply unalterable read-only permissions on the stack's physical pages, providing a robust defense against ROP attacks.
+
+# The Relationship Between Sections and Images and the EPROCESS Structure
+
+The **EPROCESS** structure is the Windows kernel's representation of a process, containing all the information needed to manage it. This includes the process's virtual address space, which is where images and sections are mapped. The `_SECTION` and `_SEGMENT` objects are not kept within a process's VAD tree; instead, the VAD tree contains references to these shared objects.
+
+---
+
+## How Sections and Images Relate to an EPROCESS Structure
+
+A process's virtual address space is managed by an **AVL tree** of **`_MMVAD`** (`Memory Manager Virtual Address Descriptor`) structures, which is rooted in the **`VadRoot`** field of the `EPROCESS` structure. Each `_MMVAD` node describes a contiguous region of memory within the process's virtual address space.
+
+When a process loads an image (like an EXE or DLL), the kernel follows these steps to map it into memory:
+
+1.  The kernel's object manager checks if a `_SECTION` object already exists for the file. These `_SECTION` objects are stored in a global, system-wide namespace, not within any single `EPROCESS` structure. They act as a central, shared repository for memory-mapped files.
+2.  If a `_SECTION` object is found, the kernel creates a new `_MMVAD` node and inserts it into the process's `VadRoot` tree.
+3.  The new `_MMVAD` node's **`Subsection`** and **`FirstPrototypePte`** fields are populated with pointers that link it to the shared `_SECTION` and its underlying **`_SEGMENT`** structure.
+
+This design is what enables efficient memory sharing. The `_SECTION` and `_SEGMENT` objects are kept in the kernel's object manager and a paged pool, accessible to all processes. Each individual `EPROCESS` structure only holds pointers to these shared objects via its `_MMVAD` tree.
+
+## Sections and Images
+
+In the context of the Windows kernel, a **section** is a fundamental object that represents a region of memory, often backed by a file. An **image**, specifically a binary executable like a DLL or an EXE, is a type of file that's loaded into memory as a section. The relationship is that an image is a specific instance of a section that is managed in a particular way by the operating system.
+
+---
+
+### Sections: The Memory Mapping Abstraction
+
+A **`_SECTION`** object provides an abstract way for the kernel to manage a memory-mapped file. When a file, say `ntdll.dll`, is mapped into memory, the kernel creates a single `_SECTION` object for it. This object contains metadata about the file, such as its size and where it's located on disk.
+
+Crucially, the `_SECTION` object is not tied to a single process. It's a shared kernel object that can be referenced by multiple processes. This allows for **memory sharing**; when `ntdll.dll` is used by a dozen different programs, the kernel only needs to keep one copy of its contents in physical memory. Each process then gets its own private view of this shared section.
+
+Underneath the `_SECTION` object lies the **`_SEGMENT`** structure, which holds the **Prototype PTEs**. These are like templates for the page table entries of the file. They contain the basic information about each page in the file, but they don't map to physical memory until a process actually needs to access a page. This is a form of **lazy loading**, which is a key optimization.
+
+
+### Images: A Specific Type of Section
+
+An **image** in the Windows kernel refers to an executable binary file, such as an `.exe` or `.dll`. When you run a program or load a library, the kernel's loader and memory manager work together to map the image file into a process's virtual address space.
+
+The process of loading an image into memory involves creating a `_SECTION` object for the file, if one doesn't already exist. The kernel then creates a `_MMVAD` (Memory Manager Virtual Address Descriptor) for the new process that points to the `_SECTION` object's Prototype PTEs. This establishes the link between the process's virtual address space and the shared, file-backed memory region.
+
+The image's format, typically a Portable Executable (PE) file, defines how the data should be interpreted and mapped. The PE header contains information about the different sections of the binary (e.g., `.text` for code, `.data` for initialized data, etc.), and the kernel's memory manager uses this information to set the correct permissions (e.g., read-only and executable for the `.text` section, read/write for the `.data` section) for the corresponding memory pages.
+
+## The Shared Memory Mechanism
+
+The relationship between sections and images is a perfect example of a shared memory mechanism. The `_SECTION` and `_SEGMENT` structures are the foundational, file-backed shared objects. An image is simply the data that resides within these structures.
+
+When two processes, say `explorer.exe` and `cmd.exe`, both load `kernel32.dll`, the workflow looks like this:
+
+1.  **Process A (`explorer.exe`) loads `kernel32.dll`.** The kernel checks if a `_SECTION` object for `kernel32.dll` already exists. It doesn't, so it creates one. It then creates a `_MMVAD` in `explorer.exe`'s address space that points to this new `_SECTION`.
+2.  **Process B (`cmd.exe`) loads `kernel32.dll`.** The kernel checks for the `_SECTION` object again and finds the existing one. It creates a new `_MMVAD` in `cmd.exe`'s address space, but this VAD also points to the *same* `_SECTION` object.
+3.  **Physical Memory**. The physical pages of `kernel32.dll` are only loaded once from disk and are referenced by both processes through their respective `_MMVAD`s and the shared `_SECTION`. This saves a significant amount of memory.
+
+In short, a section is the kernel's internal representation of a memory-mapped region. An image is a user-level concept for a binary executable, and the kernel uses sections to efficiently load and manage these images in memory, particularly when multiple processes need to access the same binary.
+
+### Key Structures and Their Locations
+
+* **`_EPROCESS`**: This is the top-level structure for a process. It contains the **`VadRoot`** pointer, which is the entry point to the `_MMVAD` tree for that process. The `_EPROCESS` structure is allocated from the VTL0 kernel's address space.
+
+```c
+// Conceptual _EPROCESS structure (simplified)
+typedef struct _EPROCESS {
+    // ... other members
+    LIST_ENTRY ActiveProcessLinks;
+    HANDLE_TABLE* ObjectTable; // The handle table for the process.
+    VOID* VadRoot; // Pointer to the root of the _MMVAD tree.
+    // ... other members
+} EPROCESS, *PEPROCESS;
+```
+
+* **`_MMVAD`**: This structure is part of the `_MMVAD` tree. It contains the virtual address range for a memory region and crucially, a pointer to its backing object. For image files, this pointer links to a **`_SUBSECTION`** which in turn points to a **`_SECTION`**. The `_MMVAD` structures are dynamically allocated for each process and are tied to a specific `_EPROCESS` object.
+
+```c
+// Conceptual _MMVAD structure (simplified for clarity)
+typedef struct _MMVAD {
+    RTL_BALANCED_NODE VadNode; // Node in the AVL tree.
+    ULONG StartingVpn; // Start Virtual Page Number.
+    ULONG EndingVpn; // End Virtual Page Number.
+    // ... other members
+    struct _SUBSECTION* Subsection; // Pointer to the subsection for file-backed mappings.
+    struct _MMPTE* FirstPrototypePte; // Pointer to the first prototype PTE.
+    // ... other members
+} MMVAD, *PMMVAD;
+```
+
+* **`_SECTION`**: This is the shared, file-backed object. It is a kernel object managed by the object manager and exists independently of any single process's address space. It contains a pointer to its corresponding **`_SEGMENT`** object, which holds the Prototype PTEs.
+
+```c
+// Conceptual _SECTION structure (simplified)
+typedef struct _SECTION {
+    // ... other members
+    struct _CONTROL_AREA* ControlArea; // Points to the control area, which contains the segment.
+    // ... other members
+} SECTION, *PSECTION;
+```
+
+* **`_SEGMENT`**: This structure holds the array of **Prototype PTEs**, which are the actual templates for the file's pages. The `_SEGMENT` and its PTEs are allocated from kernel memory and are the core component that enables multiple processes to share the same physical pages for a loaded image.
+
+```c
+// Conceptual _SEGMENT structure (simplified)
+typedef struct _SEGMENT {
+    // ... other members
+    struct _MMPTE* PrototypePte; // Pointer to the array of prototype PTEs.
+    // ... other members
+} SEGMENT, *PSEGMENT;
+```
+
+This layered architecture ensures that memory is used efficiently. The shared `_SECTION` and `_SEGMENT` objects exist only once, regardless of how many processes are using the image. The per-process `_MMVAD` structures simply point to these central objects, providing a lightweight way for each process to gain a view into the shared memory without needing to duplicate the image's pages.
