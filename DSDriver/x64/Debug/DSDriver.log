@@ -1,0 +1,23 @@
+﻿  Building 'DSDriver' with toolset 'WindowsKernelModeDriver10.0' and the 'Universal' target platform.
+  Stamping x64\Debug\DSDriver.inf
+  Stamping [Version] section with DriverVer=04/24/2025,18.31.51.626
+  Helpers.c
+  DSDriver.vcxproj -> E:\Learning-Certs\Notes\DSDriver\x64\Debug\DSDriver.sys
+  Done Adding Additional Store
+  Successfully signed: E:\Learning-Certs\Notes\DSDriver\x64\Debug\DSDriver.sys
+  
+  Driver is 'Universal'.
+  .........................
+  Signability test complete.
+  
+  Errors:
+  None
+  
+  Warnings:
+  None
+  
+  Catalog generation complete.
+  E:\Learning-Certs\Notes\DSDriver\x64\Debug\DSDriver\dsdriver.cat
+  Done Adding Additional Store
+  Successfully signed: E:\Learning-Certs\Notes\DSDriver\x64\Debug\DSDriver\dsdriver.cat
+  
