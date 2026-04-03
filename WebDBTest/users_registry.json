@@ -1,0 +1,16 @@
+{
+    "admin": {
+        "password": "password123",
+        "group": "admin",
+        "allowed_projects": [
+            "*"
+        ]
+    },
+    "guest": {
+        "password": "guest",
+        "group": "viewer",
+        "allowed_projects": [
+            "Default"
+        ]
+    }
+}

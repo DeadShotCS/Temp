@@ -1,0 +1,24 @@
+<div id="tab_settings" class="tab-content">
+    <div class="form-section">
+        <div class="section-label">Project Control</div>
+        <label>Switch Active Project</label>
+        <select id="setting_project_list" onchange="switchProject()"></select>
+        
+        <label style="margin-top:20px;">Project Tags</label>
+        <div id="settings_tag_display" style="margin-bottom:10px; display: flex; flex-wrap: wrap; min-height: 20px;"></div>
+        
+        <div style="display:flex; gap:10px;">
+            <input type="text" id="new_tag_input" placeholder="New Tag Name..." style="margin-bottom:0;">
+            <button class="btn-core" onclick="addTag()" style="width:120px">Add Tag</button>
+        </div>
+        
+        <hr style="border-color:#27272a; margin: 25px 0;">
+        
+        <label>Initialize New Project</label>
+        <div style="display:grid; grid-template-columns: 1fr 1fr 100px; gap:10px;">
+            <input type="text" id="new_project_name" placeholder="Name" style="margin-bottom:0;">
+            <input type="text" id="new_project_folder" placeholder="Folder Path" style="margin-bottom:0;">
+            <button class="btn-core" onclick="createNewProject()">Create</button>
+        </div>
+    </div>
+</div>

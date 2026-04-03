@@ -1,0 +1,24 @@
+<div id="tab_view" class="tab-content">
+    <div class="search-bar-container">
+        <input type="text" id="table_filter" placeholder="Search by Name, Tag, or Classification..." oninput="Table.filter()">
+    </div>
+
+    <div class="table-container">
+        <table class="custom-table" id="main_data_table">
+            <thead>
+                <tr>
+                    <th style="width: 30px;" onclick="Table.sort(0)">M</th>
+                    <th onclick="Table.sort(1)">Name</th>
+                    <th onclick="Table.sort(2)">Tag</th>
+                    <th onclick="Table.sort(3)">Classification</th>
+                    <th onclick="Table.sort(4)">Finding Overview</th>
+                    <th onclick="Table.sort(5)">Created By</th>
+                    <th onclick="Table.sort(6)">Last Edited By</th>
+                    <th style="text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="table_body">
+                </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,24 @@
+{
+    "current_project": "Default",
+    "projects": {
+        "Default": {
+            "folder": "projects/default",
+            "tags": [
+                "initial",
+                "asdfasdf"
+            ]
+        },
+        "asdfasdfasdf": {
+            "folder": "data/projects/asdfd",
+            "tags": []
+        },
+        "asdffffffff": {
+            "folder": "data/projects/asdfffffff",
+            "tags": []
+        },
+        "asdfasdf": {
+            "folder": "data/projects/ddd",
+            "tags": []
+        }
+    }
+}
