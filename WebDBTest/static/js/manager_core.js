@@ -13,17 +13,25 @@ const UI = {
         icon.innerText = isCollapsed ? '[ + ]' : '[ - ]';
     },
 
+    handleCustomField: (select, inputId) => {
+        const input = document.getElementById('add_' + inputId);
+        if (select.value === 'custom' || select.value === 'CREATE_NEW') {
+            input.style.display = 'block';
+        } else {
+            input.style.display = 'none';
+        }
+    },
+
     addFinding: () => {
         const container = document.getElementById('findings_container');
         const clone = container.querySelector('.finding-block').cloneNode(true);
-        const count = container.children.length + 1;
+        const count = container.querySelectorAll('.finding-block').length + 1;
         
-        // Reset and Update label
         clone.querySelector('.finding-header span').innerText = `FINDING_BLOCK_${count.toString().padStart(2, '0')}`;
         clone.querySelector('.finding-body').classList.remove('collapsed');
         clone.querySelector('.toggle-icon').innerText = '[ - ]';
-        clone.querySelectorAll('textarea').forEach(t => t.value = '');
         
+        clone.querySelectorAll('textarea, input').forEach(i => i.value = '');
         container.appendChild(clone);
     },
 
@@ -33,10 +41,15 @@ const UI = {
     },
 
     resetForm: () => {
-        if(confirm("Discard all form data?")) {
-            document.querySelectorAll('input, textarea').forEach(i => i.value = '');
+        if(confirm("DANGER: This will wipe all data in the current form. Proceed?")) {
+            document.querySelectorAll('#pane_add input, #pane_add textarea').forEach(i => i.value = '');
             const container = document.getElementById('findings_container');
             while(container.children.length > 1) container.lastElementChild.remove();
+            
+            // Reset custom inputs visibility
+            document.getElementById('add_tag_cust').style.display = 'none';
+            document.getElementById('add_type_cust').style.display = 'none';
+            Logic.init(); 
         }
     }
 };
@@ -47,29 +60,25 @@ const Logic = {
             const resp = await fetch('/api/projects');
             const data = await resp.json();
             
-            // Fix for "Undefined" project
-            const activeProj = data.current_project || "NO_PROJECT_SELECTED";
+            const activeProj = data.current_project || "DEFAULT";
             document.getElementById('header_proj_name').innerText = activeProj;
             
-            // Update Header Tags
+            // Tags in header
             document.getElementById('header_tags').innerHTML = (data.config.tags || []).map(t => 
-                `<span class="tag-pill">${t}</span>`).join('');
+                `<span style="color:var(--accent); border:1px solid #333; padding:2px 6px; font-size:9px; font-weight:bold;">${t}</span>`).join('');
 
-            // Update Settings Dropdowns
+            // Settings Dropdown
             const projSel = document.getElementById('settings_project_select');
-            projSel.innerHTML = data.config.projects.map(p => 
+            if(projSel) projSel.innerHTML = data.config.projects.map(p => 
                 `<option value="${p.name}" ${p.name === activeProj ? 'selected' : ''}>${p.name}</option>`).join('');
 
+            // Add Entry Tag Dropdown
             const tagSel = document.getElementById('add_tag_select');
-            tagSel.innerHTML = (data.config.tags || []).map(t => `<option value="${t}">${t}</option>`).join('');
-
-            // Update Settings Tag Cloud
-            document.getElementById('settings_tag_cloud').innerHTML = (data.config.tags || []).map(t => 
-                `<span class="tag-pill">${t}</span>`).join('');
+            let tagOptions = (data.config.tags || []).map(t => `<option value="${t}">${t}</option>`).join('');
+            tagSel.innerHTML = tagOptions + `<option value="custom">CREATE_NEW...</option>`;
 
         } catch (error) {
-            console.error("Initialization Error:", error);
-            document.getElementById('header_proj_name').innerText = "CONNECTION_ERROR";
+            console.error("UI INIT FAILURE:", error);
         }
     },
 
@@ -78,18 +87,6 @@ const Logic = {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ project: name })
-        });
-        location.reload();
-    },
-
-    addTag: async () => {
-        const tagName = document.getElementById('new_tag_name').value;
-        if(!tagName) return;
-        // This assumes your backend has an endpoint for adding tags to current project
-        await fetch('/api/add_tag', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ tag: tagName })
         });
         location.reload();
     },
@@ -106,9 +103,16 @@ const Logic = {
             });
         });
 
+        const tagSel = document.getElementById('add_tag_select').value;
+        const finalTag = tagSel === 'custom' ? document.getElementById('add_tag_cust').value : tagSel;
+
+        const typeSel = document.getElementById('add_func_type').value;
+        const finalType = typeSel === 'custom' ? document.getElementById('add_type_cust').value : typeSel;
+
         const payload = {
             name: document.getElementById('add_name').value,
-            tag: document.getElementById('add_tag_select').value,
+            tag: finalTag,
+            func_type: finalType,
             summary: document.getElementById('add_summary').value,
             findings: findings
         };
@@ -119,6 +123,9 @@ const Logic = {
             body: JSON.stringify(payload)
         });
 
-        if (resp.ok) alert("DATA_COMMITTED_TO_DB");
+        if (resp.ok) {
+            alert("ARCHIVE_SUCCESS: RECORD SAVED.");
+            UI.resetForm();
+        }
     }
 };
