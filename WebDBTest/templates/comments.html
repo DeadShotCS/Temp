@@ -3,87 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <title>Archive System // Manager</title>
-    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root { --accent: #d946ef; --bg: #0a0a0c; --panel: #111114; --font: 'JetBrains Mono', monospace; --comment: #6a9955; --error-red: #ef4444; }
         
         body { background: var(--bg); color: #a1a1aa; font-family: var(--font); font-size: 11px; margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* Header */
         .title-bar { height: 40px; background: #000; border-bottom: 1px solid #27272a; display: flex; align-items: center; padding: 0 15px; }
         .title-text { color: var(--accent); font-weight: 700; cursor: pointer; text-transform: uppercase; text-decoration: none; }
-        .nav-link { color: #52525b; text-decoration: none; font-weight: 700; text-transform: uppercase; font-size: 10px; transition: 0.2s; }
+        .nav-link { color: #52525b; text-decoration: none; font-weight: 700; text-transform: uppercase; font-size: 10px; padding: 0 10px; transition: 0.2s; }
         .nav-link.active { color: var(--accent); }
         .nav-link:hover { color: #fff; }
 
         .main-layout { display: flex; flex: 1; overflow: hidden; }
         
-        /* Sidebar (340px) */
         .sidebar { width: 340px; border-right: 1px solid #27272a; padding: 15px; background: var(--panel); display: flex; flex-direction: column; overflow-y: auto; }
-        .filter-label { color: #e4e4e7; font-size: 10px; font-weight: 700; text-transform: uppercase; margin-top: 15px; margin-bottom: 5px; display: block; }
+        .filter-label { color: #e4e4e7; font-size: 10px; font-weight: 700; text-transform: uppercase; margin-top: 12px; margin-bottom: 4px; display: block; }
         
-        input, select, textarea { background: #000 !important; border: 1px solid #333 !important; color: #ccc !important; font-family: var(--font); font-size: 11px !important; width: 100%; padding: 8px; border-radius: 0; }
-        input:focus, textarea:focus { border-color: var(--accent) !important; outline: none; }
+        input, select, textarea { background: #000 !important; border: 1px solid #333 !important; color: #ccc !important; font-family: var(--font); font-size: 11px !important; width: 100%; padding: 6px; border-radius: 0; }
+        input:focus, select:focus, textarea:focus { border-color: var(--accent) !important; outline: none; }
 
-        /* Navigation Buttons */
-        .nav-group { display: flex; flex-direction: column; gap: 2px; }
-        .btn-nav { background: #1a1a1d; border: 1px solid #333; color: #aaa; font-size: 10px; padding: 12px; font-weight: 700; cursor: pointer; text-align: left; text-transform: uppercase; border-left: 3px solid transparent; }
+        .btn-nav { background: #1a1a1d; border: 1px solid #333; color: #aaa; font-size: 10px; padding: 10px; font-weight: 700; cursor: pointer; text-align: left; text-transform: uppercase; border-left: 3px solid transparent; margin-bottom: 2px; width: 100%; }
         .btn-nav:hover { background: #222; color: #fff; }
         .btn-nav.active { border-left-color: var(--accent); color: #fff; background: #000; }
 
-        .btn-exe { background: var(--accent); border: none; color: #fff; width: 100%; padding: 12px; font-weight: 700; margin-top: 20px; text-transform: uppercase; cursor: pointer; }
+        .btn-exe { background: var(--accent); border: none; color: #fff; width: 100%; padding: 12px; font-weight: 700; margin-top: 15px; text-transform: uppercase; cursor: pointer; }
         .btn-exe:hover { filter: brightness(1.1); }
 
-        /* Viewport Content */
-        .viewport { flex: 1; padding: 20px; background: #050506; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
-        .inner-box { background: #000; border: 1px solid #18181b; padding: 20px; }
+        .viewport { flex: 1; padding: 15px; background: #050506; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .inner-box { background: #000; border: 1px solid #18181b; padding: 15px; }
         
         .tab-pane { display: none; }
         .tab-pane.active { display: block; }
 
-        /* Table Styling for View Tab */
-        .data-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        .data-table th { color: var(--accent); text-align: left; padding: 10px; border-bottom: 1px solid #27272a; font-size: 10px; }
-        .data-table td { padding: 10px; border-bottom: 1px solid #111; color: #9cdcfe; }
-        .data-table tr:hover { background: #0a0a0c; }
+        .finding-block { border-top: 1px solid #27272a; padding-top: 10px; margin-top: 10px; }
+        .tag-toggle { font-size: 9px; color: var(--accent); cursor: pointer; float: right; text-decoration: underline; }
+        
+        .row { display: flex; gap: 10px; }
+        .col { flex: 1; }
 
-        /* Finding Blocks */
-        .finding-block { border-top: 1px solid #27272a; padding-top: 15px; margin-top: 15px; position: relative; }
-        .radio-group { display: flex; gap: 15px; margin-top: 5px; }
-        .radio-item { display: flex; align-items: center; gap: 5px; font-size: 10px; cursor: pointer; }
-        .radio-item input { width: auto !important; margin: 0; accent-color: var(--accent); }
+        /* Table density */
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th { text-align: left; color: var(--accent); border-bottom: 1px solid #27272a; padding: 8px; text-transform: uppercase; font-size: 10px; }
+        .data-table td { padding: 8px; border-bottom: 1px solid #111; color: #9cdcfe; }
     </style>
 </head>
 <body>
 
 <div class="title-bar">
     <a href="/" class="title-text">Archive System // Manager</a>
-    <div style="margin-left: auto; display: flex; gap: 20px; align-items: center;">
+    <div style="margin-left: auto;">
         <a href="/" class="nav-link">Explorer</a>
         <a href="/comments" class="nav-link active">Comment Manager</a>
-        <a href="/logout" class="nav-link" style="color: var(--error-red) !important;">Logout</a>
     </div>
 </div>
 
 <div class="main-layout">
     <div class="sidebar">
-        <label class="filter-label">System Navigation</label>
-        <div class="nav-group">
-            <button class="btn-nav active" id="btn_add" onclick="UI.switchTab('add')">Add Entry</button>
-            <button class="btn-nav" id="btn_view" onclick="UI.switchTab('view')">View Edit Data</button>
-            <button class="btn-nav" id="btn_settings" onclick="UI.switchTab('settings')">Settings</button>
-            <button class="btn-nav" id="btn_export" onclick="UI.switchTab('export')">Export Data</button>
-        </div>
-
-        <div id="sidebar_context" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #27272a;">
-            <label class="filter-label">Current Status</label>
-            <div style="font-size: 9px; color: #52525b; line-height: 1.6;">
-                PROJECT: <span id="cur_proj" style="color: var(--accent);">...</span><br>
-                STATUS: <span style="color: var(--comment);">READY_FOR_INPUT</span><br>
-                AUTH: <span style="color: #ccc;">JMD</span>
+        <label class="filter-label">Navigation</label>
+        <button class="btn-nav active" id="btn_add" onclick="UI.switchTab('add')">Add Entry</button>
+        <button class="btn-nav" id="btn_view" onclick="UI.switchTab('view')">View Edit Data</button>
+        <button class="btn-nav" id="btn_settings" onclick="UI.switchTab('settings')">Settings</button>
+        <button class="btn-nav" id="btn_export" onclick="UI.switchTab('export')">Export Data</button>
+        
+        <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #27272a;">
+            <label class="filter-label">Active Project</label>
+            <select id="active_project_select" onchange="Logic.switchProject(this.value)"></select>
+            
+            <div style="font-size: 9px; color: #52525b; margin-top: 10px; line-height: 1.5;">
+                STATUS: <span style="color: var(--comment);">STABLE_AUTH</span><br>
+                OPERATOR: <span id="current_user" style="color: #ccc;">ADMIN</span>
             </div>
-            <button class="btn-exe" id="save_trigger" onclick="Logic.saveEntry()">Commit Changes</button>
+            <button class="btn-exe" onclick="Logic.saveEntry()">Save Entry</button>
         </div>
     </div>
 
@@ -92,19 +83,18 @@
         <div id="pane_add" class="tab-pane active">
             <div class="inner-box">
                 <div class="row">
-                    <div class="col-8">
-                        <label class="filter-label">Main Name (Symbol/Function)</label>
-                        <input type="text" id="add_name" placeholder="e.g. NtCreateUserProcess">
+                    <div class="col">
+                        <label class="filter-label">Symbol Name</label>
+                        <input type="text" id="add_name" placeholder="NtOpenProcess">
                     </div>
-                    <div class="col-4">
-                        <label class="filter-label">Lookup Type</label>
-                        <div class="radio-group">
-                            <label class="radio-item"><input type="radio" name="lookup" checked> Folder</label>
-                            <label class="radio-item"><input type="radio" name="lookup"> Custom</label>
-                        </div>
+                    <div class="col">
+                        <span class="tag-toggle" onclick="UI.toggleTagMode()">[SWITCH_MODE]</span>
+                        <label class="filter-label">Tag</label>
+                        <div id="tag_drop_ui"><select id="add_tag_select"></select></div>
+                        <div id="tag_cust_ui" style="display:none;"><input type="text" id="add_tag_custom" placeholder="New Tag..."></div>
                     </div>
                 </div>
-                <label class="filter-label" style="margin-top:15px;">Target Path</label>
+                <label class="filter-label">Library Path</label>
                 <select id="add_path">
                     <option>E:\Learning-Certs\Notes\DSDriver\DSDriver</option>
                 </select>
@@ -112,50 +102,34 @@
 
             <div class="inner-box">
                 <div class="row">
-                    <div class="col-2">
-                        <label class="filter-label">Category</label>
-                        <div class="nav-group" style="gap:5px;">
-                            <label class="radio-item"><input type="radio" name="cat" checked> Function</label>
-                            <label class="radio-item"><input type="radio" name="cat"> Service</label>
-                            <label class="radio-item"><input type="radio" name="cat"> Other</label>
+                    <div class="col"><label class="filter-label">Category</label><select id="add_cat"><option>Kernel</option><option>User</option><option>Driver</option></select></div>
+                    <div class="col"><label class="filter-label">Type</label><select id="add_type"><option>Function</option><option>Service</option><option>Struct</option></select></div>
+                    <div class="col"><label class="filter-label">Status</label><select id="add_stat"><option>SUCCESS</option><option>FAILURE</option><option>STATUS</option></select></div>
+                </div>
+                <label class="filter-label">Summary</label>
+                <textarea id="add_summary" style="height: 60px; resize: none;"></textarea>
+            </div>
+
+            <div class="inner-box" id="findings_container">
+                <div class="finding-block" style="border:none; margin:0; padding:0;">
+                    <div class="row">
+                        <div class="col">
+                            <label class="filter-label">Details</label>
+                            <textarea class="f-info" style="height: 80px; resize: none;"></textarea>
                         </div>
-                    </div>
-                    <div class="col-10">
-                        <label class="filter-label">Description / Summary</label>
-                        <textarea id="add_summary" style="height: 100px; resize: none;"></textarea>
+                        <div class="col">
+                            <label class="filter-label">Requirements</label>
+                            <textarea class="f-req" style="height: 33px; margin-bottom: 4px; resize: none;"></textarea>
+                            <label class="filter-label">Verification</label>
+                            <textarea class="f-ver" style="height: 33px; resize: none;"></textarea>
+                        </div>
                     </div>
                 </div>
             </div>
-
-            <div class="inner-box">
-                <div id="findings_container">
-                    <div class="finding-block">
-                        <div class="row">
-                            <div class="col-2">
-                                <label class="filter-label">Type</label>
-                                <div class="nav-group" style="gap:5px;">
-                                    <label class="radio-item"><input type="radio" name="ft_0"> Bug</label>
-                                    <label class="radio-item"><input type="radio" name="ft_0"> Useful</label>
-                                    <label class="radio-item"><input type="radio" name="ft_0" checked> Unknown</label>
-                                </div>
-                            </div>
-                            <div class="col-5">
-                                <label class="filter-label">Finding Details</label>
-                                <textarea class="f-info" style="height: 120px; resize: none;"></textarea>
-                            </div>
-                            <div class="col-5">
-                                <label class="filter-label">Requirements</label>
-                                <textarea class="f-req" style="height: 50px; resize: none; margin-bottom: 10px;"></textarea>
-                                <label class="filter-label">Verification</label>
-                                <textarea class="f-ver" style="height: 50px; resize: none;"></textarea>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="row mt-3 px-3" style="gap: 10px;">
-                    <button class="btn-nav" style="flex:1; text-align:center" onclick="UI.addFinding()">+ Add Finding</button>
-                    <button class="btn-nav" style="flex:1; text-align:center; color: var(--error-red)" onclick="UI.removeFinding()">- Remove Block</button>
-                </div>
+            
+            <div class="row" style="padding: 0 15px;">
+                <button class="btn-nav" style="flex:1; text-align:center" onclick="UI.addFinding()">+ Add Block</button>
+                <button class="btn-nav" style="flex:1; text-align:center; color: var(--error-red)" onclick="UI.removeFinding()">- Remove Block</button>
             </div>
         </div>
 
@@ -163,12 +137,7 @@
             <div class="inner-box" style="padding:0;">
                 <table class="data-table">
                     <thead>
-                        <tr>
-                            <th>SYMBOL_NAME</th>
-                            <th>MODULE_PATH</th>
-                            <th>ENTRY_TYPE</th>
-                            <th style="text-align:right">ACTIONS</th>
-                        </tr>
+                        <tr><th>SYMBOL</th><th>TAG</th><th>STATUS</th><th style="text-align:right">OP</th></tr>
                     </thead>
                     <tbody id="view_table_body"></tbody>
                 </table>
@@ -177,29 +146,18 @@
 
         <div id="pane_settings" class="tab-pane">
             <div class="inner-box">
-                <label class="filter-label">Active Project Context</label>
-                <div class="row g-2">
-                    <div class="col-9"><select id="set_project_select"></select></div>
-                    <div class="col-3"><button class="btn-nav" style="width:100%; text-align:center" onclick="Logic.switchProject()">Switch</button></div>
-                </div>
-
-                <label class="filter-label" style="margin-top:25px;">Registered Tag Library</label>
-                <div id="tag_cloud" style="margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 5px;"></div>
-                <div class="row g-2">
-                    <div class="col-9"><input type="text" id="new_tag_input" placeholder="Enter new tag name..."></div>
-                    <div class="col-3"><button class="btn-nav" style="width:100%; text-align:center" onclick="Logic.addTag()">Register</button></div>
-                </div>
+                <label class="filter-label">// System Configuration Context</label>
+                <div style="color: var(--comment); margin-bottom: 10px;">// Settings modules loaded. Ready for override.</div>
+                <input type="text" placeholder="Global Path Override...">
+                <button class="btn-nav" style="margin-top: 10px; text-align: center;">Update Environment</button>
             </div>
         </div>
 
         <div id="pane_export" class="tab-pane">
             <div class="inner-box">
                 <label class="filter-label">Export Format</label>
-                <select id="export_format">
-                    <option value="json">Structured JSON</option>
-                    <option value="csv">Database CSV</option>
-                </select>
-                <button class="btn-exe">Generate Data Export</button>
+                <select><option>JSON_STRUCTURED</option><option>CSV_RAW</option></select>
+                <button class="btn-exe">Execute Export</button>
             </div>
         </div>
 
