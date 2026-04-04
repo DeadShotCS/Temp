@@ -1,32 +1,77 @@
-<div id="tab_settings" class="tab-content">
-    <div id="settings_status" style="display:none; padding:10px; border:1px solid var(--accent); background:rgba(0,255,170,0.05); color:var(--accent); font-family:monospace; font-size:10px; margin-bottom:15px;"></div>
-    
-    <div class="form-section">
-        <div class="section-label">01 // Project Selection</div>
-        <div class="row align-items-end">
-            <div class="col-10">
-                <label>Current Projects</label>
-                <select id="set_project_select"></select>
-            </div>
-            <div class="col-2">
-                <button class="btn-core w-100" onclick="Logic.switchProject()">Switch</button>
-            </div>
-        </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Archive Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/manager_style.css') }}">
+</head>
+<body>
+
+<div class="title-bar">
+    <div class="title-text" onclick="location.href='/'">ARCHIVE // MANAGER</div>
+    <div id="project_info" style="font-size: 12px; color: #94a3b8;">
+        PROJECT: <span id="current_project_name" style="color: #3b82f6; font-weight: bold;">...</span>
+    </div>
+</div>
+
+<div class="main-layout">
+    <div class="sidebar">
+        <button class="tab-btn active" id="btn_add" onclick="UI.switchTab('add')">Add Entry</button>
+        <button class="tab-btn" id="btn_view" onclick="UI.switchTab('view')">View Project Data</button>
+        <button class="tab-btn" id="btn_settings" onclick="UI.switchTab('settings')">Settings</button>
     </div>
 
-    <div class="form-section">
-        <div class="section-label">02 // Tag Editor</div>
-        <label>Current Registered Tags</label>
-        <div id="tag_list_container" style="display:flex; flex-wrap:wrap; gap:8px; padding:15px; background:rgba(0,0,0,0.2); border:1px solid #333; margin-bottom:15px; min-height:45px;"></div>
-        
-        <label>Add New Tag</label>
-        <div class="row">
-            <div class="col-10">
-                <input type="text" id="set_new_tag" placeholder="e.g. ntoskrnl.exe">
+    <div class="content-pane">
+        <div id="tab_add" class="tab-content active">
+            <div class="form-section">
+                <label>Symbol / Function Name</label>
+                <input type="text" id="add_name">
+                <label>File Path</label>
+                <input type="text" id="add_path">
+                <label>Type</label>
+                <select id="add_type"><option>Function</option><option>Struct</option></select>
             </div>
-            <div class="col-2">
-                <button class="btn-core btn-save w-100" onclick="Logic.addTag()">Add</button>
+            
+            <div id="findings_container"></div>
+            
+            <button class="btn-core w-100 mb-2" onclick="UI.addFinding()">+ Add Finding</button>
+            <button class="btn-core w-100" onclick="Logic.saveEntry()">Save Entry</button>
+        </div>
+
+        <div id="tab_view" class="tab-content">
+            <div class="form-section">
+                <table class="table table-dark">
+                    <thead><tr><th>Name</th><th>Path</th><th>Type</th><th></th></tr></thead>
+                    <tbody id="table_body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tab_settings" class="tab-content">
+            <div id="settings_status" style="display:none; padding:10px; background:#1e293b; color:#3b82f6; margin-bottom:15px; border-radius:8px;"></div>
+            
+            <div class="form-section">
+                <label>Active Project</label>
+                <div class="d-flex gap-2">
+                    <select id="set_project_select"></select>
+                    <button class="btn-core" onclick="Logic.switchProject()">Switch</button>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <label>Registered Tags</label>
+                <div id="tag_list_container" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:15px;"></div>
+                <div class="d-flex gap-2">
+                    <input type="text" id="set_new_tag" placeholder="New Tag Name">
+                    <button class="btn-core" onclick="Logic.addTag()">Add</button>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<script src="{{ url_for('static', filename='js/manager_core.js') }}"></script>
+<script>window.onload = () => Logic.init();</script>
+</body>
+</html>
