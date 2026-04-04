@@ -1,39 +1,87 @@
-import json, os, uuid
+import json
+import os
+import uuid
 from datetime import datetime
 
-def _get_path(base_path):
-    return os.path.join(base_path, 'data_entries.json')
+DB_FILE = 'data_entries.json'
 
-def get_entries(base_path):
-    fpath = _get_path(base_path)
-    if not os.path.exists(fpath): return []
-    with open(fpath, 'r') as f:
-        try: return json.load(f)
-        except: return []
+class CommentManager:
+    def __init__(self):
+        self._ensure_db()
+
+    def _ensure_db(self):
+        """Initializes the JSON file if it doesn't exist."""
+        if not os.path.exists(DB_FILE):
+            with open(DB_FILE, 'w') as f:
+                json.dump({}, f)
+
+    def _load_all(self):
+        with open(DB_FILE, 'r') as f:
+            return json.load(f)
+
+    def _save_all(self, data):
+        with open(DB_FILE, 'w') as f:
+            json.dump(data, f, indent=4)
+
+    def add_entry(self, project_name, entry_data, user="ADMIN"):
+        """
+        Adds a structured entry to a specific project.
+        Structured to mimic a SQL 'INSERT' operation.
+        """
+        db = self._load_all()
         
-def add_structured_entry(base_path, name, filepath, c_type, description, findings, user):
-    data = get_entries(base_path)
-    timestamp = datetime.now().isoformat()
-    
-    new_entry = {
-        "Main": {
-            "ID": str(uuid.uuid4()),
-            "MainName": name,
-            "Type": "Manual Entry",
-            "Filepath": filepath,
-            "Info": [{"type": "created", "timestamp": timestamp, "user": user}]
-        },
-        "Description": {"Type": c_type, "Info": description},
-        "Findings": findings
-    }
-    
-    data.append(new_entry)
-    with open(_get_path(base_path), 'w') as f:
-        json.dump(data, f, indent=4)
+        if project_name not in db:
+            db[project_name] = []
 
-def delete_entry(base_path, entry_id):
-    data = get_entries(base_path)
-    # Filter by ID inside the Main block
-    updated_data = [e for e in data if e['Main']['ID'] != entry_id]
-    with open(_get_path(base_path), 'w') as f:
-        json.dump(updated_data, f, indent=4)
+        timestamp = datetime.now().isoformat()
+        
+        new_entry = {
+            "id": str(uuid.uuid4()),
+            "name": entry_data.get('name'),
+            "tag": entry_data.get('tag'),
+            "type": entry_data.get('type'),
+            "summary": entry_data.get('summary'),
+            "findings": entry_data.get('findings', []),
+            "created_at": timestamp,
+            "created_by": user,
+            "last_edit_at": timestamp,
+            "last_edit_by": user
+        }
+
+        db[project_name].append(new_entry)
+        self._save_all(db)
+        return new_entry["id"]
+
+    def get_project_entries(self, project_name):
+        """Mimics 'SELECT * FROM entries WHERE project = ...'"""
+        db = self._load_all()
+        return db.get(project_name, [])
+
+    def update_entry(self, project_name, entry_id, update_data, user="ADMIN"):
+        """Mimics 'UPDATE entries SET ... WHERE id = ...'"""
+        db = self._load_all()
+        project_list = db.get(project_name, [])
+        
+        for entry in project_list:
+            if entry["id"] == entry_id:
+                # Update core fields
+                for key in ['name', 'tag', 'type', 'summary', 'findings']:
+                    if key in update_data:
+                        entry[key] = update_data[key]
+                
+                # Update metadata
+                entry["last_edit_at"] = datetime.now().isoformat()
+                entry["last_edit_by"] = user
+                
+                self._save_all(db)
+                return True
+        return False
+
+    def delete_entry(self, project_name, entry_id):
+        """Mimics 'DELETE FROM entries WHERE id = ...'"""
+        db = self._load_all()
+        if project_name in db:
+            db[project_name] = [e for e in db[project_name] if e["id"] != entry_id]
+            self._save_all(db)
+            return True
+        return False

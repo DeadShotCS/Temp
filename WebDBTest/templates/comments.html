@@ -38,7 +38,6 @@
         .filter-label { color: #e4e4e7; font-size: 9px; font-weight: 800; text-transform: uppercase; margin-bottom: 5px; display: block; }
         input, select, textarea { background: #000 !important; border: 1px solid #27272a !important; color: #ccc !important; font-family: var(--font); font-size: 11px !important; width: 100%; padding: 8px; border-radius: 0; margin-bottom: 0px; box-sizing: border-box; }
         
-        /* Spacing for input rows */
         .input-group { margin-bottom: 12px; }
 
         .tab-pane { display: none; }
@@ -49,12 +48,11 @@
         .finding-header { background: #111114; padding: 6px 12px; font-weight: 800; color: #71717a; border-bottom: 1px solid #18181b; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; gap: 10px; }
         .status-indicator { font-size: 10px; color: var(--accent); }
         
-        /* Clean Layout Grid */
         .finding-body { padding: 12px; display: grid; grid-template-columns: 180px 1.4fr 1fr; gap: 15px; padding-bottom: 5px; }
 
         .row { display: flex; gap: 20px; } .col { flex: 1; }
 
-        /* ACTION BAR (image_30a92c.png Style) */
+        /* ACTION BAR */
         .action-bar { background: #000; border-top: 1px solid var(--border); padding: 15px 30px; display: flex; gap: 12px; margin-top: auto; }
         .btn-exe { background: var(--accent); border: none; color: #fff; padding: 12px 25px; font-weight: 800; text-transform: uppercase; cursor: pointer; font-size: 10px; }
         .btn-alt { background: #1a1a1d; border: 1px solid #333; color: #fff; padding: 12px 20px; font-weight: 800; text-transform: uppercase; cursor: pointer; font-size: 10px; }
@@ -173,9 +171,61 @@
                 <button class="btn-warn" onclick="UI.removeFinding()">REMOVE LAST</button>
             </div>
         </div>
+
+        <div id="pane_view" class="tab-pane">
+            <div class="inner-box">
+                <div class="box-header"><span class="box-title">Data Archive</span></div>
+                <div class="box-content" id="archive_list">
+                    <p style="color: var(--comment);">// ARCHIVE_READY_FOR_QUERY</p>
+                </div>
+            </div>
         </div>
+
+        <div id="pane_export" class="tab-pane">
+            <div class="inner-box">
+                <div class="box-header"><span class="box-title">Utility</span></div>
+                <div class="box-content">
+                    <button class="btn-exe">GENERATE JSON DUMP</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="pane_settings" class="tab-pane">
+            <div class="inner-box">
+                <div class="box-header"><span class="box-title">01 Project Management</span></div>
+                <div class="box-content">
+                    <div class="row">
+                        <div class="col">
+                            <label class="filter-label">SWITCH TO PROJECT</label>
+                            <select id="set_proj_select">
+                                </select>
+                        </div>
+                        <div class="col">
+                            <label class="filter-label">OR CREATE NEW PROJECT</label>
+                            <input type="text" id="set_proj_new" placeholder="New Project Name...">
+                        </div>
+                    </div>
+                    <div class="action-bar" style="border:none; padding: 15px 0 0 0;">
+                        <button class="btn-exe" onclick="Logic.saveSettings()">INITIALIZE / SWITCH PROJECT</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="inner-box">
+                <div class="box-header"><span class="box-title">02 Tag Configuration</span></div>
+                <div class="box-content">
+                    <label class="filter-label">ACTIVE PROJECT TAGS (COMMA SEPARATED)</label>
+                    <textarea id="set_tags" style="height: 100px; resize: none;" placeholder="e.g. Kernel, UserMode, Hooking"></textarea>
+                    <div class="action-bar" style="border:none; padding: 15px 0 0 0;">
+                        <button class="btn-alt" onclick="Logic.updateTagsOnly()">UPDATE TAGS</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
+{% include 'status_handler.html' %}
 <script src="/static/js/manager_core.js"></script>
 <script>window.onload = () => Logic.init();</script>
 </body>

@@ -1,60 +1,26 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Archive | Login</title>
+    <title>ARCHIVE SYSTEM // LOGIN</title>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { background: #0a0a0c; color: #d946ef; font-family: 'JetBrains Mono'; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
-        .login-box { border: 1px solid #27272a; padding: 40px; background: #000; width: 300px; position: relative; }
-        input { background: #111; border: 1px solid #27272a; color: #fff; width: 100%; padding: 10px; margin: 10px 0; font-family: 'JetBrains Mono'; font-size: 11px; }
-        input:focus { border-color: #d946ef; outline: none; }
-        button { background: #d946ef; border: none; color: #fff; width: 100%; padding: 12px; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; }
-        button:hover { background: #e35df3; }
-        .glitch-title { font-size: 14px; margin-bottom: 20px; font-weight: 700; border-bottom: 1px solid #27272a; padding-bottom: 10px; }
+        body { background: #0a0a0c; color: #d946ef; font-family: 'JetBrains Mono', monospace; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-box { background: #111114; border: 1px solid #27272a; padding: 30px; width: 300px; }
+        h2 { font-size: 14px; text-transform: uppercase; margin-top: 0; letter-spacing: 2px; }
+        input { background: #000; border: 1px solid #27272a; color: #fff; width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; font-family: inherit; }
+        button { background: #d946ef; border: none; color: #fff; width: 100%; padding: 10px; cursor: pointer; font-weight: bold; text-transform: uppercase; margin-top: 10px; }
+        .error { color: #ef4444; font-size: 10px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
-
-    {% include 'status_handler.html' %}
-
     <div class="login-box">
-        <div class="glitch-title">SYSTEM_AUTH_REQUIRED</div>
-        <input type="text" id="u" placeholder="USERNAME" autocomplete="off">
-        <input type="password" id="p" placeholder="PASSWORD">
-        <button onclick="doLogin()">Initialize Session</button>
+        <h2>SYSTEM_ACCESS</h2>
+        {% if error %}<div class="error">{{ error }}</div>{% endif %}
+        <form method="POST">
+            <input type="text" name="username" placeholder="USERNAME" required>
+            <input type="password" name="password" placeholder="PASSWORD" required>
+            <button type="submit">INITIALIZE_SESSION</button>
+        </form>
     </div>
-
-    <script>
-        async function doLogin() {
-            const u = document.getElementById('u').value;
-            const p = document.getElementById('p').value;
-
-            try {
-                const resp = await fetch('/login', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({user: u, pass: p})
-                });
-
-                const data = await resp.json();
-
-                if (resp.ok && data.status === "success") {
-                    // Success is usually silent on redirect, but let's show it briefly
-                    showStatus("ACCESS_GRANTED", "success");
-                    setTimeout(() => window.location.href = '/', 800);
-                } else {
-                    // Handle failure without a 401 redirect
-                    showStatus("AUTH_FAILURE: INVALID_CREDENTIALS", "error");
-                }
-            } catch (err) {
-                showStatus("CONNECTION_ERROR: SERVER_UNREACHABLE", "error");
-            }
-        }
-
-        // Allow 'Enter' key to login
-        document.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') doLogin();
-        });
-    </script>
 </body>
 </html>
