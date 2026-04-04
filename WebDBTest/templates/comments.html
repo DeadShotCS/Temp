@@ -2,76 +2,189 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Archive Manager</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/manager_style.css') }}">
+    <title>Archive System // Manager</title>
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --accent: #d946ef; --bg: #0a0a0c; --panel: #111114; --font: 'JetBrains Mono', monospace; --comment: #6a9955; --error-red: #ef4444; }
+        
+        body { background: var(--bg); color: #a1a1aa; font-family: var(--font); font-size: 11px; margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        .title-bar { height: 40px; background: #000; border-bottom: 1px solid #27272a; display: flex; align-items: center; padding: 0 15px; }
+        .title-text { color: var(--accent); font-weight: 700; cursor: pointer; text-transform: uppercase; text-decoration: none; }
+        .nav-link { color: #52525b; text-decoration: none; font-weight: 700; text-transform: uppercase; font-size: 10px; transition: 0.2s; }
+        .nav-link.active { color: var(--accent); }
+        .nav-link:hover { color: #fff; }
+
+        .main-layout { display: flex; flex: 1; overflow: hidden; }
+        
+        /* Sidebar - Strict 340px */
+        .sidebar { width: 340px; border-right: 1px solid #27272a; padding: 15px; background: var(--panel); display: flex; flex-direction: column; overflow-y: auto; }
+        .filter-label { color: #e4e4e7; font-size: 10px; font-weight: 700; text-transform: uppercase; margin-top: 15px; margin-bottom: 5px; display: block; }
+        
+        input, select, textarea { background: #000 !important; border: 1px solid #333 !important; color: #ccc !important; font-family: var(--font); font-size: 11px !important; width: 100%; padding: 8px; border-radius: 0; }
+        input:focus, textarea:focus { border-color: var(--accent) !important; outline: none; }
+
+        /* Tabs Logic */
+        .nav-group { margin-top: 5px; display: flex; flex-direction: column; gap: 2px; }
+        .btn-nav { background: #1a1a1d; border: 1px solid #333; color: #aaa; font-size: 10px; padding: 12px; font-weight: 700; cursor: pointer; text-align: left; text-transform: uppercase; }
+        .btn-nav:hover { background: #222; color: #fff; }
+        .btn-nav.active { border-left: 3px solid var(--accent); color: #fff; background: #000; }
+
+        .btn-exe { background: var(--accent); border: none; color: #fff; width: 100%; padding: 12px; font-weight: 700; margin-top: 20px; text-transform: uppercase; cursor: pointer; }
+        .btn-exe:hover { filter: brightness(1.1); }
+
+        /* Viewport Workspace */
+        .viewport { flex: 1; padding: 20px; background: #050506; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .inner-box { background: #000; border: 1px solid #18181b; padding: 20px; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Radio Buttons */
+        .radio-set { display: flex; gap: 15px; margin-top: 5px; }
+        .radio-option { display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 10px; }
+        .radio-option input { width: auto !important; margin: 0; }
+
+        /* Finding Block Styling */
+        .finding-block { border-top: 1px solid #27272a; padding-top: 15px; margin-top: 15px; }
+    </style>
 </head>
 <body>
 
 <div class="title-bar">
-    <div class="title-text" onclick="location.href='/'">ARCHIVE // MANAGER</div>
-    <div id="project_info" style="font-size: 12px; color: #94a3b8;">
-        PROJECT: <span id="current_project_name" style="color: #3b82f6; font-weight: bold;">...</span>
+    <a href="/" class="title-text">Archive System // Manager</a>
+    <div style="margin-left: auto; display: flex; gap: 20px; align-items: center;">
+        <a href="/" class="nav-link">Explorer</a>
+        <a href="/comments" class="nav-link active">Comment Manager</a>
+        <a href="/logout" class="nav-link" style="color: var(--error-red) !important;">Logout</a>
     </div>
 </div>
 
 <div class="main-layout">
     <div class="sidebar">
-        <button class="tab-btn active" id="btn_add" onclick="UI.switchTab('add')">Add Entry</button>
-        <button class="tab-btn" id="btn_view" onclick="UI.switchTab('view')">View Project Data</button>
-        <button class="tab-btn" id="btn_settings" onclick="UI.switchTab('settings')">Settings</button>
+        <label class="filter-label">Navigation</label>
+        <div class="nav-group">
+            <button class="btn-nav active" onclick="UI.switchTab(event, 'add')">Add Entry</button>
+            <button class="btn-nav" onclick="UI.switchTab(event, 'view')">View Edit Data</button>
+            <button class="btn-nav" onclick="UI.switchTab(event, 'settings')">Settings</button>
+            <button class="btn-nav" onclick="UI.switchTab(event, 'export')">Export Data</button>
+        </div>
+
+        <div id="side_add_info" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #27272a;">
+            <div style="font-size: 9px; color: #52525b; line-height: 1.6;">
+                <span style="color: var(--accent); font-weight: bold;">STATUS:</span> NEW_ENTRY<br>
+                <span style="color: var(--accent); font-weight: bold;">USER:</span> JMD<br>
+                <span style="color: var(--accent); font-weight: bold;">AUTO_INFO:</span> NOT_SAVED
+            </div>
+            <button class="btn-exe" onclick="Data.saveEntry()">Save Entry</button>
+        </div>
     </div>
 
-    <div class="content-pane">
+    <div class="viewport">
         <div id="tab_add" class="tab-content active">
-            <div class="form-section">
-                <label>Symbol / Function Name</label>
-                <input type="text" id="add_name">
-                <label>File Path</label>
-                <input type="text" id="add_path">
-                <label>Type</label>
-                <select id="add_type"><option>Function</option><option>Struct</option></select>
+            <div class="inner-box">
+                <div class="row">
+                    <div class="col-8">
+                        <label class="filter-label">Main Name</label>
+                        <input type="text" id="main_name" placeholder="e.g. PsGetCurrentProcess">
+                    </div>
+                    <div class="col-4">
+                        <label class="filter-label">Type</label>
+                        <div class="radio-set">
+                            <label class="radio-option"><input type="radio" name="folder_type" checked> Folder</label>
+                            <label class="radio-option"><input type="radio" name="folder_type"> Custom</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <label class="filter-label" style="margin-top:15px;">Path</label>
+                <select id="path_select">
+                    <option>E:\Learning-Certs\Notes\DSDriver\DSDriver</option>
+                </select>
             </div>
-            
-            <div id="findings_container"></div>
-            
-            <button class="btn-core w-100 mb-2" onclick="UI.addFinding()">+ Add Finding</button>
-            <button class="btn-core w-100" onclick="Logic.saveEntry()">Save Entry</button>
+
+            <div class="inner-box" style="margin-top: 15px;">
+                <div class="row">
+                    <div class="col-2">
+                        <label class="filter-label">Type</label>
+                        <div class="nav-group" style="gap:5px;">
+                            <label class="radio-option"><input type="radio" name="entry_type" checked> Function</label>
+                            <label class="radio-option"><input type="radio" name="entry_type"> Service</label>
+                            <label class="radio-option"><input type="radio" name="entry_type"> Other</label>
+                        </div>
+                    </div>
+                    <div class="col-10">
+                        <label class="filter-label">Description / Summary</label>
+                        <textarea id="summary" style="height: 100px; resize: none;"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="inner-box" style="margin-top: 15px;">
+                <div id="findings_container">
+                    <div class="finding-block">
+                        <div class="row">
+                            <div class="col-2">
+                                <label class="filter-label">Finding Type</label>
+                                <div class="nav-group" style="gap:5px;">
+                                    <label class="radio-option"><input type="radio" name="f_type_0"> Bug</label>
+                                    <label class="radio-option"><input type="radio" name="f_type_0"> Useful</label>
+                                    <label class="radio-option"><input type="radio" name="f_type_0" checked> Unknown</label>
+                                </div>
+                            </div>
+                            <div class="col-5">
+                                <label class="filter-label">Finding Details/Info</label>
+                                <textarea style="height: 120px; resize: none;"></textarea>
+                            </div>
+                            <div class="col-5">
+                                <label class="filter-label">Requirements</label>
+                                <textarea style="height: 50px; resize: none; margin-bottom: 10px;"></textarea>
+                                <label class="filter-label">Verification</label>
+                                <textarea style="height: 50px; resize: none;"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-3" style="gap: 10px; padding: 0 15px;">
+                    <button class="btn-nav" style="flex:1; text-align:center;" onclick="UI.addFinding()">+ Add Finding</button>
+                    <button class="btn-nav" style="flex:1; text-align:center; color: var(--error-red);" onclick="UI.removeFinding()">- Remove Last</button>
+                </div>
+            </div>
         </div>
 
         <div id="tab_view" class="tab-content">
-            <div class="form-section">
-                <table class="table table-dark">
-                    <thead><tr><th>Name</th><th>Path</th><th>Type</th><th></th></tr></thead>
-                    <tbody id="table_body"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div id="tab_settings" class="tab-content">
-            <div id="settings_status" style="display:none; padding:10px; background:#1e293b; color:#3b82f6; margin-bottom:15px; border-radius:8px;"></div>
-            
-            <div class="form-section">
-                <label>Active Project</label>
-                <div class="d-flex gap-2">
-                    <select id="set_project_select"></select>
-                    <button class="btn-core" onclick="Logic.switchProject()">Switch</button>
-                </div>
-            </div>
-
-            <div class="form-section">
-                <label>Registered Tags</label>
-                <div id="tag_list_container" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:15px;"></div>
-                <div class="d-flex gap-2">
-                    <input type="text" id="set_new_tag" placeholder="New Tag Name">
-                    <button class="btn-core" onclick="Logic.addTag()">Add</button>
-                </div>
+            <div class="inner-box">
+                <label class="filter-label">// System Registry View</label>
+                <div id="registry_output" style="color: var(--comment);">// Loading existing entries...</div>
             </div>
         </div>
     </div>
 </div>
 
-<script src="{{ url_for('static', filename='js/manager_core.js') }}"></script>
-<script>window.onload = () => Logic.init();</script>
+<script>
+    const UI = {
+        switchTab: (event, tabId) => {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.btn-nav').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab_' + tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        },
+        addFinding: () => {
+            const container = document.getElementById('findings_container');
+            const clone = container.firstElementChild.cloneNode(true);
+            // Unique radio names for the new block
+            const id = Date.now();
+            clone.querySelectorAll('input').forEach(i => i.name = 'f_type_' + id);
+            clone.querySelectorAll('textarea').forEach(t => t.value = '');
+            container.appendChild(clone);
+        },
+        removeFinding: () => {
+            const container = document.getElementById('findings_container');
+            if (container.children.length > 1) container.lastElementChild.remove();
+        }
+    }
+</script>
 </body>
 </html>

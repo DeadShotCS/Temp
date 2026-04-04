@@ -9,6 +9,7 @@ import comment_manager
 app = Flask(__name__)
 app.secret_key = 'ARCHIVE_CORE_SECURE_KEY_2026_JAKE' 
 
+# --- EXPLORER ---
 @app.route('/')
 def home():
     if 'user' not in session: return redirect(url_for('login'))
@@ -27,6 +28,7 @@ def search():
     result = data_manager.perform_search(d['category'], d['criteria'])
     return jsonify({"output": result})
 
+# --- MANAGER ---
 @app.route('/comments')
 def comments_main():
     if 'user' not in session: return redirect(url_for('login'))
@@ -64,10 +66,11 @@ def handle_entries():
     path = project_manager.get_current_project_path()
     if request.method == 'POST':
         d = request.json
-        comment_manager.add_structured_entry(path, d['name'], d['filepath'], d['type'], d['description'], d['findings'], session['user'])
+        comment_manager.add_structured_entry(path, d['name'], d['filepath'], d['type'], "Entry via Manager", d['findings'], session['user'])
         return jsonify({"status": "success"})
     return jsonify(comment_manager.get_entries(path))
 
+# --- AUTH ---
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -78,6 +81,11 @@ def login():
             return jsonify({"status": "success"})
         return jsonify({"status": "fail"}), 200
     return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
 
 if __name__ == '__main__':
     project_manager.init_registry()
