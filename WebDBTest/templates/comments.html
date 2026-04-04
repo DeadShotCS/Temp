@@ -5,162 +5,193 @@
     <title>Archive System // Manager</title>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        :root { --accent: #d946ef; --bg: #0a0a0c; --panel: #111114; --font: 'JetBrains Mono', monospace; --comment: #6a9955; --error-red: #ef4444; }
+        :root { --accent: #d946ef; --bg: #0a0a0c; --panel: #111114; --font: 'JetBrains Mono', monospace; --comment: #6a9955; --error-red: #ef4444; --border: #18181b; }
         
         body { background: var(--bg); color: #a1a1aa; font-family: var(--font); font-size: 11px; margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        .title-bar { height: 40px; background: #000; border-bottom: 1px solid #27272a; display: flex; align-items: center; padding: 0 15px; }
-        .title-text { color: var(--accent); font-weight: 700; cursor: pointer; text-transform: uppercase; text-decoration: none; }
-        .nav-link { color: #52525b; text-decoration: none; font-weight: 700; text-transform: uppercase; font-size: 10px; padding: 0 10px; transition: 0.2s; }
-        .nav-link.active { color: var(--accent); }
-        .nav-link:hover { color: #fff; }
+        /* Header & Project Context */
+        .title-bar { height: 45px; background: #000; border-bottom: 1px solid #27272a; display: flex; align-items: center; padding: 0 15px; gap: 25px; }
+        .title-text { color: var(--accent); font-weight: 700; text-transform: uppercase; text-decoration: none; font-size: 12px; }
+        .project-context { display: flex; align-items: center; gap: 10px; flex: 1; border-left: 1px solid #27272a; padding-left: 20px; }
+        .tag-pill { background: #1a1a1d; border: 1px solid var(--accent); color: var(--accent); padding: 2px 8px; font-size: 9px; font-weight: bold; }
 
         .main-layout { display: flex; flex: 1; overflow: hidden; }
         
-        .sidebar { width: 340px; border-right: 1px solid #27272a; padding: 15px; background: var(--panel); display: flex; flex-direction: column; overflow-y: auto; }
-        .filter-label { color: #e4e4e7; font-size: 10px; font-weight: 700; text-transform: uppercase; margin-top: 12px; margin-bottom: 4px; display: block; }
-        
-        input, select, textarea { background: #000 !important; border: 1px solid #333 !important; color: #ccc !important; font-family: var(--font); font-size: 11px !important; width: 100%; padding: 6px; border-radius: 0; }
-        input:focus, select:focus, textarea:focus { border-color: var(--accent) !important; outline: none; }
-
-        .btn-nav { background: #1a1a1d; border: 1px solid #333; color: #aaa; font-size: 10px; padding: 10px; font-weight: 700; cursor: pointer; text-align: left; text-transform: uppercase; border-left: 3px solid transparent; margin-bottom: 2px; width: 100%; }
+        /* Navigation Sidebar */
+        .sidebar { width: 240px; border-right: 1px solid #27272a; padding: 15px; background: var(--panel); }
+        .nav-label { color: #52525b; font-size: 9px; font-weight: 700; text-transform: uppercase; margin-bottom: 8px; display: block; }
+        .btn-nav { background: #1a1a1d; border: 1px solid #333; color: #aaa; font-size: 10px; padding: 12px; font-weight: 700; cursor: pointer; text-align: left; text-transform: uppercase; border-left: 3px solid transparent; margin-bottom: 4px; width: 100%; }
         .btn-nav:hover { background: #222; color: #fff; }
         .btn-nav.active { border-left-color: var(--accent); color: #fff; background: #000; }
 
-        .btn-exe { background: var(--accent); border: none; color: #fff; width: 100%; padding: 12px; font-weight: 700; margin-top: 15px; text-transform: uppercase; cursor: pointer; }
-        .btn-exe:hover { filter: brightness(1.1); }
+        /* Viewport */
+        .viewport { flex: 1; padding: 20px; background: #050506; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; padding-bottom: 100px; }
+        .inner-box { background: #0c0c0e; border: 1px solid var(--border); padding: 0; margin-bottom: 15px; }
+        .box-header { background: #111114; border-bottom: 1px solid var(--border); padding: 8px 15px; display: flex; justify-content: space-between; align-items: center; }
+        .box-title { color: var(--accent); font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .box-content { padding: 15px; }
 
-        .viewport { flex: 1; padding: 15px; background: #050506; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .inner-box { background: #000; border: 1px solid #18181b; padding: 15px; }
+        /* Form Elements */
+        .filter-label { color: #71717a; font-size: 9px; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; display: block; }
+        input, select, textarea { background: #000 !important; border: 1px solid #27272a !important; color: #ccc !important; font-family: var(--font); font-size: 11px !important; width: 100%; padding: 8px; border-radius: 0; }
+        input:focus, select:focus, textarea:focus { border-color: var(--accent) !important; outline: none; }
         
         .tab-pane { display: none; }
         .tab-pane.active { display: block; }
 
-        .finding-block { border-top: 1px solid #27272a; padding-top: 10px; margin-top: 10px; }
-        .tag-toggle { font-size: 9px; color: var(--accent); cursor: pointer; float: right; text-decoration: underline; }
-        
-        .row { display: flex; gap: 10px; }
-        .col { flex: 1; }
+        /* Finding Block - Collapsable */
+        .finding-block { border: 1px solid #18181b; background: #08080a; margin-top: 10px; }
+        .finding-header { background: #111114; padding: 8px 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 9px; font-weight: bold; color: #52525b; }
+        .finding-header:hover { background: #1a1a1d; color: #fff; }
+        .finding-body { padding: 15px; display: block; }
+        .finding-body.collapsed { display: none; }
 
-        /* Table density */
-        .data-table { width: 100%; border-collapse: collapse; }
-        .data-table th { text-align: left; color: var(--accent); border-bottom: 1px solid #27272a; padding: 8px; text-transform: uppercase; font-size: 10px; }
-        .data-table td { padding: 8px; border-bottom: 1px solid #111; color: #9cdcfe; }
+        .row { display: flex; gap: 15px; } .col { flex: 1; }
+
+        /* Bottom Sticky Actions */
+        .action-bar { background: #000; border-top: 1px solid #27272a; padding: 15px; display: flex; gap: 10px; position: fixed; bottom: 0; right: 0; width: calc(100% - 240px); z-index: 100; }
+        .btn-exe { background: var(--accent); border: none; color: #fff; padding: 10px 25px; font-weight: 700; text-transform: uppercase; cursor: pointer; font-size: 10px; }
+        .btn-alt { background: #1a1a1d; border: 1px solid #333; color: #ccc; padding: 10px 20px; font-weight: 700; text-transform: uppercase; cursor: pointer; font-size: 10px; }
     </style>
 </head>
 <body>
 
 <div class="title-bar">
-    <a href="/" class="title-text">Archive System // Manager</a>
-    <div style="margin-left: auto;">
+    <a href="/" class="title-text">Archive // Manager</a>
+    <div class="project-context" id="header_context">
+        <span style="font-size: 9px; color: #52525b;">ACTIVE_PROJ:</span>
+        <span id="header_proj_name" style="color: #fff; font-weight: bold; margin-right: 15px;">INITIALIZING...</span>
+        <div id="header_tags" style="display: flex; gap: 5px;"></div>
+    </div>
+    <div style="display: flex; gap: 15px; align-items: center;">
         <a href="/" class="nav-link">Explorer</a>
-        <a href="/comments" class="nav-link active">Comment Manager</a>
+        <span style="color: #52525b; font-size: 9px;">OP: ADMIN</span>
     </div>
 </div>
 
 <div class="main-layout">
     <div class="sidebar">
-        <label class="filter-label">Navigation</label>
+        <label class="nav-label">Navigation</label>
         <button class="btn-nav active" id="btn_add" onclick="UI.switchTab('add')">Add Entry</button>
         <button class="btn-nav" id="btn_view" onclick="UI.switchTab('view')">View Edit Data</button>
         <button class="btn-nav" id="btn_settings" onclick="UI.switchTab('settings')">Settings</button>
         <button class="btn-nav" id="btn_export" onclick="UI.switchTab('export')">Export Data</button>
-        
-        <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #27272a;">
-            <label class="filter-label">Active Project</label>
-            <select id="active_project_select" onchange="Logic.switchProject(this.value)"></select>
-            
-            <div style="font-size: 9px; color: #52525b; margin-top: 10px; line-height: 1.5;">
-                STATUS: <span style="color: var(--comment);">STABLE_AUTH</span><br>
-                OPERATOR: <span id="current_user" style="color: #ccc;">ADMIN</span>
-            </div>
-            <button class="btn-exe" onclick="Logic.saveEntry()">Save Entry</button>
-        </div>
     </div>
 
     <div class="viewport">
         
         <div id="pane_add" class="tab-pane active">
             <div class="inner-box">
-                <div class="row">
-                    <div class="col">
-                        <label class="filter-label">Symbol Name</label>
-                        <input type="text" id="add_name" placeholder="NtOpenProcess">
+                <div class="box-header"><span class="box-title">01 Information</span></div>
+                <div class="box-content">
+                    <div class="row">
+                        <div class="col">
+                            <label class="filter-label">Symbol Name</label>
+                            <input type="text" id="add_name" placeholder="Symbol/Function Name">
+                        </div>
+                        <div class="col">
+                            <label class="filter-label">Project Tag</label>
+                            <select id="add_tag_select"></select>
+                        </div>
                     </div>
-                    <div class="col">
-                        <span class="tag-toggle" onclick="UI.toggleTagMode()">[SWITCH_MODE]</span>
-                        <label class="filter-label">Tag</label>
-                        <div id="tag_drop_ui"><select id="add_tag_select"></select></div>
-                        <div id="tag_cust_ui" style="display:none;"><input type="text" id="add_tag_custom" placeholder="New Tag..."></div>
+                    <div style="margin-top: 15px;">
+                        <label class="filter-label">Target Library Path</label>
+                        <select id="add_path"><option>E:\Learning-Certs\Notes\DSDriver\DSDriver</option></select>
                     </div>
                 </div>
-                <label class="filter-label">Library Path</label>
-                <select id="add_path">
-                    <option>E:\Learning-Certs\Notes\DSDriver\DSDriver</option>
-                </select>
             </div>
 
             <div class="inner-box">
-                <div class="row">
-                    <div class="col"><label class="filter-label">Category</label><select id="add_cat"><option>Kernel</option><option>User</option><option>Driver</option></select></div>
-                    <div class="col"><label class="filter-label">Type</label><select id="add_type"><option>Function</option><option>Service</option><option>Struct</option></select></div>
-                    <div class="col"><label class="filter-label">Status</label><select id="add_stat"><option>SUCCESS</option><option>FAILURE</option><option>STATUS</option></select></div>
+                <div class="box-header"><span class="box-title">02 Overview</span></div>
+                <div class="box-content">
+                    <label class="filter-label">Summary / Description</label>
+                    <textarea id="add_summary" style="height: 80px; resize: none;"></textarea>
                 </div>
-                <label class="filter-label">Summary</label>
-                <textarea id="add_summary" style="height: 60px; resize: none;"></textarea>
             </div>
 
-            <div class="inner-box" id="findings_container">
-                <div class="finding-block" style="border:none; margin:0; padding:0;">
-                    <div class="row">
-                        <div class="col">
-                            <label class="filter-label">Details</label>
-                            <textarea class="f-info" style="height: 80px; resize: none;"></textarea>
+            <div class="inner-box">
+                <div class="box-header">
+                    <span class="box-title">03 Findings</span>
+                    <span style="color: #52525b; font-size: 9px;">DYNAMIC_ENTRIES</span>
+                </div>
+                <div class="box-content" id="findings_container">
+                    <div class="finding-block">
+                        <div class="finding-header" onclick="UI.toggleCollapse(this)">
+                            <span>FINDING_BLOCK_01</span>
+                            <span class="toggle-icon">[ - ]</span>
                         </div>
-                        <div class="col">
-                            <label class="filter-label">Requirements</label>
-                            <textarea class="f-req" style="height: 33px; margin-bottom: 4px; resize: none;"></textarea>
-                            <label class="filter-label">Verification</label>
-                            <textarea class="f-ver" style="height: 33px; resize: none;"></textarea>
+                        <div class="finding-body">
+                            <div class="row">
+                                <div class="col">
+                                    <label class="filter-label">Type</label>
+                                    <select class="f-type">
+                                        <option>Function</option>
+                                        <option>Service</option>
+                                        <option>Struct</option>
+                                        <option>IOCTL</option>
+                                    </select>
+                                </div>
+                                <div class="col">
+                                    <label class="filter-label">Status</label>
+                                    <select class="f-status">
+                                        <option>SUCCESS</option>
+                                        <option>FAILURE</option>
+                                        <option>STATUS</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row" style="margin-top:15px;">
+                                <div class="col">
+                                    <label class="filter-label">Details</label>
+                                    <textarea class="f-info" style="height: 100px; resize: none;"></textarea>
+                                </div>
+                                <div class="col">
+                                    <label class="filter-label">Requirements</label>
+                                    <textarea class="f-req" style="height: 40px; resize: none; margin-bottom: 10px;"></textarea>
+                                    <label class="filter-label">Verification</label>
+                                    <textarea class="f-ver" style="height: 40px; resize: none;"></textarea>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <div class="row" style="padding: 0 15px;">
-                <button class="btn-nav" style="flex:1; text-align:center" onclick="UI.addFinding()">+ Add Block</button>
-                <button class="btn-nav" style="flex:1; text-align:center; color: var(--error-red)" onclick="UI.removeFinding()">- Remove Block</button>
-            </div>
-        </div>
 
-        <div id="pane_view" class="tab-pane">
-            <div class="inner-box" style="padding:0;">
-                <table class="data-table">
-                    <thead>
-                        <tr><th>SYMBOL</th><th>TAG</th><th>STATUS</th><th style="text-align:right">OP</th></tr>
-                    </thead>
-                    <tbody id="view_table_body"></tbody>
-                </table>
+            <div class="action-bar">
+                <button class="btn-exe" onclick="Logic.saveEntry()">Save Entry</button>
+                <button class="btn-alt" onclick="UI.resetForm()">Reset Form</button>
+                <button class="btn-alt" onclick="UI.addFinding()">+ Add Finding</button>
+                <button class="btn-alt" style="color: var(--error-red);" onclick="UI.removeFinding()">- Remove Last</button>
             </div>
         </div>
 
         <div id="pane_settings" class="tab-pane">
             <div class="inner-box">
-                <label class="filter-label">// System Configuration Context</label>
-                <div style="color: var(--comment); margin-bottom: 10px;">// Settings modules loaded. Ready for override.</div>
-                <input type="text" placeholder="Global Path Override...">
-                <button class="btn-nav" style="margin-top: 10px; text-align: center;">Update Environment</button>
+                <div class="box-header"><span class="box-title">Project Management</span></div>
+                <div class="box-content">
+                    <label class="filter-label">Switch Active Project</label>
+                    <select id="settings_project_select" onchange="Logic.switchProject(this.value)"></select>
+                    
+                    <label class="filter-label" style="margin-top: 20px;">Create New Project</label>
+                    <div class="row">
+                        <div class="col"><input type="text" id="new_project_name" placeholder="Project ID..."></div>
+                        <div class="col"><button class="btn-alt" style="width:100%" onclick="Logic.createProject()">Initialize</button></div>
+                    </div>
+                </div>
             </div>
-        </div>
 
-        <div id="pane_export" class="tab-pane">
             <div class="inner-box">
-                <label class="filter-label">Export Format</label>
-                <select><option>JSON_STRUCTURED</option><option>CSV_RAW</option></select>
-                <button class="btn-exe">Execute Export</button>
+                <div class="box-header"><span class="box-title">Tag Configuration</span></div>
+                <div class="box-content">
+                    <label class="filter-label">Current Tags</label>
+                    <div id="settings_tag_cloud" style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:15px;"></div>
+                    <div class="row">
+                        <div class="col"><input type="text" id="new_tag_name" placeholder="New Tag..."></div>
+                        <div class="col"><button class="btn-alt" style="width:100%" onclick="Logic.addTag()">Add Tag</button></div>
+                    </div>
+                </div>
             </div>
         </div>
-
     </div>
 </div>
 
