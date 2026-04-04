@@ -6,7 +6,7 @@ import os
 app = Flask(__name__)
 app.secret_key = "DEV_KEY_WEB_DB"
 
-# Register Blueprints
+# Registering without prefixes to match your logs: GET /comments
 app.register_blueprint(explorer_bp)
 app.register_blueprint(mgmt_bp)
 

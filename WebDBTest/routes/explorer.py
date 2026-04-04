@@ -35,4 +35,9 @@ def search():
         )
         return jsonify({"output": raw_result})
     except Exception as e:
-        return jsonify({"output": {"panes": [f"// ERROR: {str(e)}"]}}), 500
+        error_str = str(e) if str(e) else "Unknown System Error"
+        print(f"DEBUG: Search Error -> {error_str}")
+        return jsonify({
+            "status": "error", 
+            "message": f"SEARCH_FAILURE: {error_str}"
+        }), 500

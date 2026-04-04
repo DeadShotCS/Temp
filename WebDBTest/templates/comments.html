@@ -39,7 +39,6 @@
         input, select, textarea { background: #000 !important; border: 1px solid #27272a !important; color: #ccc !important; font-family: var(--font); font-size: 11px !important; width: 100%; padding: 8px; border-radius: 0; margin-bottom: 0px; box-sizing: border-box; }
         
         .input-group { margin-bottom: 12px; }
-
         .tab-pane { display: none; }
         .tab-pane.active { display: block; }
 
@@ -47,14 +46,14 @@
         .finding-block { border: 1px solid #18181b; background: #08080a; margin-bottom: 8px; }
         .finding-header { background: #111114; padding: 6px 12px; font-weight: 800; color: #71717a; border-bottom: 1px solid #18181b; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; gap: 10px; }
         .status-indicator { font-size: 10px; color: var(--accent); }
-        
         .finding-body { padding: 12px; display: grid; grid-template-columns: 180px 1.4fr 1fr; gap: 15px; padding-bottom: 5px; }
 
         .row { display: flex; gap: 20px; } .col { flex: 1; }
 
         /* ACTION BAR */
         .action-bar { background: #000; border-top: 1px solid var(--border); padding: 15px 30px; display: flex; gap: 12px; margin-top: auto; }
-        .btn-exe { background: var(--accent); border: none; color: #fff; padding: 12px 25px; font-weight: 800; text-transform: uppercase; cursor: pointer; font-size: 10px; }
+        .btn-exe { background: #7c6ab3; border: none; color: #fff; padding: 12px 25px; font-weight: 800; text-transform: uppercase; cursor: pointer; font-size: 10px; }
+        .btn-exe:hover { background: #907dc9; }
         .btn-alt { background: #1a1a1d; border: 1px solid #333; color: #fff; padding: 12px 20px; font-weight: 800; text-transform: uppercase; cursor: pointer; font-size: 10px; }
         .btn-warn { background: transparent; border: 1px solid var(--error-red); color: var(--error-red); padding: 12px 20px; font-weight: 800; text-transform: uppercase; cursor: pointer; font-size: 10px; }
     </style>
@@ -97,20 +96,24 @@
 </template>
 
 <div class="title-bar">
-    <div class="header-left">
-        <a href="/" class="title-text">ARCHIVE SYSTEM // MANAGER</a>
-        <span style="color:#333; margin:0 5px;">|</span>
-        <span id="header_proj_name" class="proj-display">...</span>
-        <span style="color:#333; margin:0 5px;">|</span>
-        <span class="user-display">ADMIN</span>
+    <div class="header-left" style="display: flex; align-items: center; gap: 20px;">
+        <a href="/" class="title-text" style="text-transform: uppercase; letter-spacing: 1px;">Archive System</a>
+        
+        <span class="proj-display" style="color: #52525b; font-size: 10px; font-weight: 700; text-transform: uppercase;">
+            PROJECT: <span id="header_proj_name" style="color: var(--accent);">{{ current_project or 'NONE_LOADED' }}</span>
+        </span>
+        
+        <span class="user-display" style="color: #52525b; font-size: 10px; font-weight: 700; text-transform: uppercase; border-left: 1px solid #27272a; padding-left: 20px;">
+            USER: <span style="color: #e4e4e7;">ADMIN</span>
+        </span>
     </div>
-    <div class="header-right">
-        <a href="/" class="nav-link">EXPLORER</a>
-        <a href="/manager" class="nav-link active">COMMENT MANAGER</a>
-        <a href="/logout" class="logout-link">LOGOUT</a>
+
+    <div style="margin-left: auto; display: flex; gap: 20px; align-items: center;">
+        <a href="/" class="nav-link">Explorer</a>
+        <a href="/comments" class="nav-link active">Comment Manager</a>
+        <a href="/logout" class="nav-link" style="color: var(--error-red) !important;">Logout</a>
     </div>
 </div>
-
 <div class="main-layout">
     <div class="sidebar">
         <label class="nav-label">Navigation</label>

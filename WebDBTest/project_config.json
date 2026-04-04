@@ -1,0 +1,17 @@
+{
+    "active_project": "Default",
+    "projects": {
+        "Default": {
+            "tags": [
+                "General",
+                "Note",
+                "Todo"
+            ]
+        },
+        "asdfasdf": {
+            "tags": [
+                "General"
+            ]
+        }
+    }
+}

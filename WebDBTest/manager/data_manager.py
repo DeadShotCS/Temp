@@ -149,7 +149,7 @@ def perform_search(category, criteria):
         src_data = SYMBOL_DATA.get(ver_src)
         dst_data = SYMBOL_DATA.get(ver_dst)
         if not src_data or not dst_data:
-            return {"panes": ["// ERROR: Binary selection incomplete for diff."], "swaps": {}}
+            raise Exception("Binary selection incomplete for diff")
         
         def find_local(b_dict, name):
             if name in b_dict.get('functions', {}):
@@ -163,7 +163,7 @@ def perform_search(category, criteria):
         d_type, d_code = find_local(dst_data, symbol_name)
 
         if s_type == "import" or d_type == "import":
-            return {"panes": ["// ERROR: Cannot diff imports. Search in 'Symbol Search' to resolve source."], "swaps": {}}
+           raise Exception("Cannot diff imports. Search in 'Symbol Search' to resolve source")
 
         return {
             "panes": [
@@ -178,7 +178,7 @@ def perform_search(category, criteria):
         bin_name = ver_src.split(' (')[0]
         ver_num = ver_src.split('(')[1].replace(')', '')
     except:
-        return {"panes": ["// ERROR: Select a valid binary."], "swaps": {}}
+        raise Exception("Select a valid binary")
 
     if category == "list" and (not symbol_name or symbol_name == "*"):
         data = SYMBOL_DATA.get(ver_src)
@@ -199,4 +199,4 @@ def perform_search(category, criteria):
             "swaps": {"file_search": found_in_bin} if is_redirect else {}
         }
     
-    return {"panes": [f"// ERROR: {error}"], "swaps": {}}
+    raise Exception(f"{error}")

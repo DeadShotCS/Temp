@@ -36,17 +36,24 @@
 </div>
 
 <script>
-    function showStatus(msg, type = 'info') {
-        const statusEl = document.getElementById('unified_status');
-        if (!statusEl) return;
+    // 1. Define the object the Manager wants
+    const StatusHandler = {
+        show: function(msg, type = 'info') {
+            const statusEl = document.getElementById('unified_status');
+            if (!statusEl) return;
 
-        statusEl.className = 'status-bubble status-' + type;
-        statusEl.innerText = `[ ${msg} ]`;
-        statusEl.style.display = 'block';
+            statusEl.className = 'status-bubble status-' + type;
+            statusEl.innerText = `[ ${msg} ]`;
+            statusEl.style.display = 'block';
 
-        if (window.statusTimeout) clearTimeout(window.statusTimeout);
-        window.statusTimeout = setTimeout(() => {
-            statusEl.style.display = 'none';
-        }, 4000);
-    }
+            if (window.statusTimeout) clearTimeout(window.statusTimeout);
+            window.statusTimeout = setTimeout(() => {
+                statusEl.style.display = 'none';
+            }, 4000);
+        }
+    };
+
+    // 2. Point the old global function name to the new object method
+    // This ensures every other file in your project continues to work.
+    window.showStatus = StatusHandler.show;
 </script>

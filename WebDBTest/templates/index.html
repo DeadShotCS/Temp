@@ -6,38 +6,31 @@
     <link href="/static/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        :root { --accent: #d946ef; --bg: #0a0a0c; --panel: #111114; --font: 'JetBrains Mono', monospace; --comment: #6a9955; --error-red: #ef4444; }
+        :root { --accent: #d946ef; --bg: #0a0a0c; --panel: #111114; --font: 'JetBrains Mono', monospace; --comment: #6a9955; --error-red: #ef4444; --border: #27272a; }
         
         body { background: var(--bg); color: #a1a1aa; font-family: var(--font); font-size: 11px; margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* Nav & Title */
-        .title-bar { height: 40px; background: #000; border-bottom: 1px solid #27272a; display: flex; align-items: center; padding: 0 15px; }
-        .title-text { color: var(--accent); font-weight: 700; cursor: pointer; text-transform: uppercase; text-decoration: none; }
+        .title-bar { height: 40px; background: #000; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; flex-shrink: 0; }
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .title-text { color: var(--accent); font-weight: 700; text-transform: uppercase; text-decoration: none; font-size: 11px; letter-spacing: 1px; }
+        .proj-display { color: #52525b; font-size: 10px; font-weight: 700; }
+        .user-display { color: var(--comment); font-weight: bold; font-size: 10px; border-left: 1px solid var(--border); padding-left: 15px; margin-left: 5px; }
+
         .nav-link { color: #52525b; text-decoration: none; font-weight: 700; text-transform: uppercase; font-size: 10px; transition: 0.2s; }
         .nav-link.active { color: var(--accent); }
         .nav-link:hover { color: #fff; }
 
         .main-layout { display: flex; flex: 1; overflow: hidden; }
         
-        /* Sidebar */
-        .sidebar { width: 340px; border-right: 1px solid #27272a; padding: 15px; background: var(--panel); display: flex; flex-direction: column; overflow-y: auto; }
+        .sidebar { width: 340px; border-right: 1px solid var(--border); padding: 15px; background: var(--panel); display: flex; flex-direction: column; overflow-y: auto; flex-shrink: 0; }
         .filter-label { color: #e4e4e7; font-size: 10px; font-weight: 700; text-transform: uppercase; margin-top: 15px; margin-bottom: 5px; display: block; }
-        input, select { background: #000 !important; border: 1px solid #333 !important; color: #ccc !important; font-family: var(--font); font-size: 11px !important; width: 100%; padding: 8px; border-radius: 0; }
+        input, select { background: #000 !important; border: 1px solid #333 !important; color: #ccc !important; font-family: var(--font); font-size: 11px !important; width: 100%; padding: 8px; border-radius: 0; box-sizing: border-box; }
         
-        /* Autocomplete */
-        .search-container { position: relative; }
-        .custom-dropdown { position: absolute; top: 100%; left: 0; width: 100%; background: #000; border: 1px solid var(--accent); z-index: 100; max-height: 180px; overflow-y: auto; display: none; }
-        .dropdown-item { padding: 8px; cursor: pointer; border-bottom: 1px solid #222; font-size: 10px; }
+        .search-container { position: relative; width: 100%; }
+        .custom-dropdown { position: absolute; top: 100%; left: 0; width: 100%; background: #000; border: 1px solid var(--accent); z-index: 1000; max-height: 180px; overflow-y: auto; display: none; }
+        .dropdown-item { padding: 8px; cursor: pointer; border-bottom: 1px solid #222; font-size: 10px; color: #ccc; }
         .dropdown-item:hover { background: var(--accent); color: #fff; }
         
-        /* Actions */
-        .btn-exe { background: var(--accent); border: none; color: #fff; width: 100%; padding: 12px; font-weight: 700; margin-top: 20px; text-transform: uppercase; cursor: pointer; }
-        .btn-exe:hover { filter: brightness(1.1); }
-        .nav-group { margin-top: 15px; display: flex; gap: 4px; border-top: 1px solid #27272a; padding-top: 15px; }
-        .btn-nav { background: #1a1a1d; border: 1px solid #333; color: #aaa; flex: 1; font-size: 9px; padding: 8px; font-weight: 700; cursor: pointer; }
-        .btn-nav:hover { background: #222; color: #fff; }
-
-        /* Viewport */
         .viewport { display: flex; gap: 10px; flex: 1; padding: 20px; background: #050506; overflow: hidden; }
         .inner-box { flex: 1; min-width: 0; background: #000; border: 1px solid #18181b; color: #9cdcfe; white-space: pre; overflow-y: auto; line-height: 1.6; }
         .line-row { padding: 0 15px; border-left: 3px solid transparent; transition: background 0.1s; }
@@ -45,6 +38,11 @@
         .line-row.selected { background: #26262a; border-left-color: var(--accent); color: #fff; }
         .comment { color: var(--comment); }
         
+        .btn-exe { background: #7c6ab3; border: none; color: #fff; width: 100%; padding: 12px; font-weight: 700; margin-top: 20px; text-transform: uppercase; cursor: pointer; font-size: 10px; }
+        .btn-exe:hover { background: #907dc9; }
+        .btn-nav { background: #1a1a1d; border: 1px solid #333; color: #aaa; flex: 1; font-size: 9px; padding: 8px; font-weight: 700; cursor: pointer; }
+        .nav-group { margin-top: 15px; display: flex; gap: 4px; border-top: 1px solid var(--border); padding-top: 15px; }
+
         body.ctrl-held .line-row { cursor: pointer; }
     </style>
 </head>
@@ -53,7 +51,16 @@
 {% include 'status_handler.html' %}
 
 <div class="title-bar">
-    <a href="/" class="title-text">Archive System // Explorer</a>
+    <div class="header-left" style="display: flex; align-items: center; gap: 20px;">
+        <a href="/" class="title-text">Archive System</a>
+        <span class="proj-display" style="color: #52525b; font-size: 10px; font-weight: 700;">
+            PROJECT: <span id="header_proj_name" style="color: var(--accent);">{{ current_project or 'NONE_LOADED' }}</span>
+        </span>
+        <span class="user-display" style="color: #52525b; font-size: 10px; font-weight: 700;">
+            USER: <span style="color: #e4e4e7;">ADMIN</span>
+        </span>
+    </div>
+
     <div style="margin-left: auto; display: flex; gap: 20px; align-items: center;">
         <a href="/" class="nav-link active">Explorer</a>
         <a href="/comments" class="nav-link">Comment Manager</a>
@@ -208,19 +215,44 @@
                 }
             };
 
-            const resp = await fetch('/search', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(payload)
-            });
-            
-            if (!resp.ok) { if(window.showStatus) showStatus("SEARCH_FAILED", "error"); return; }
-            
-            const data = await resp.json();
-            UI.renderPanes(data.output);
+            try {
+                const resp = await fetch('/search', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
 
-            if(saveToHistory) History.push(payload);
-            if(window.showStatus) showStatus("QUERY_SUCCESS", "success");
+                // 1. READ THE TEXT ONCE
+                const text = await resp.text();
+                let data;
+                
+                try {
+                    // 2. TRY TO PARSE IT
+                    data = JSON.parse(text);
+                } catch (e) {
+                    // If it's not JSON (like a raw 500 HTML page)
+                    if (window.showStatus) showStatus(`SERVER_ERROR: ${resp.status}`, "error");
+                    return;
+                }
+
+                // 3. CHECK THE STATUS OF THE PARSED JSON
+                if (!resp.ok || data.status === "error") {
+                    const errorMsg = data.message || "SEARCH_FAILURE";
+                    if (window.showStatus) showStatus(errorMsg, "error");
+                    return;
+                }
+
+                // 4. SUCCESS PATH
+                // Use 'data.output' because your Python returns 'output' for results
+                UI.renderPanes(data.output);
+
+                if (saveToHistory) History.push(payload);
+                if (window.showStatus) showStatus("QUERY_SUCCESS", "success");
+
+            } catch (networkErr) {
+                console.error("Network/Fetch Error:", networkErr);
+                if (window.showStatus) showStatus("CONNECTION_REFUSED", "error");
+            }
         }
     };
 
@@ -290,6 +322,23 @@
     window.onload = async () => {
         await Data.refreshOptions();
         
+        // --- ADDED: SYNC PROJECT WITH COMMENT MANAGER ---
+        try {
+            const projResp = await fetch('/api/projects');
+            const projData = await projResp.json();
+            
+            // FIX: Changed 'active_project' to 'current_project'
+            const activeName = projData.current_project; 
+            
+            const headerElem = document.getElementById('header_proj_name');
+            if (headerElem && activeName) {
+                headerElem.innerText = activeName;
+            }
+        } catch (e) {
+            console.warn("Project sync failed:", e);
+        }
+        // -----------------------------------------------
+
         // Handle incoming Share Links
         const urlParams = new URLSearchParams(window.location.search);
         if(urlParams.has('mode')) {

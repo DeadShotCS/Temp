@@ -120,9 +120,15 @@ const Logic = {
             
             const result = await resp.json();
             if (resp.ok) {
-                StatusHandler.show("MIGRATION_SUCCESS: RELOADING", "success");
+                StatusHandler.show("MIGRATION_SUCCESS", "success");
                 newProjInput.value = "";
-                setTimeout(() => location.reload(), 800); 
+                
+                // MANUAL UI UPDATE - NO RELOAD
+                const header = document.getElementById('header_proj_name');
+                if (header) header.innerText = targetProject;
+                
+                // Re-run init to refresh dropdowns and tags without a reload
+                Logic.init(); 
             } else {
                 StatusHandler.show(`MIGRATION_FAILED: ${result.message}`, "error");
             }

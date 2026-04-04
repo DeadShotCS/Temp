@@ -1,87 +1,57 @@
 import json
 import os
-import uuid
-from datetime import datetime
-
-DB_FILE = 'data_entries.json'
 
 class CommentManager:
-    def __init__(self):
-        self._ensure_db()
+    def __init__(self, config_path="project_config.json"):
+        # Go up one level from the 'manager' folder to find the project root
+        base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.config_path = os.path.join(base_path, config_path)
+        print(f"--> CommentManager active at: {self.config_path}")
+        self._ensure_config_exists()
 
-    def _ensure_db(self):
-        """Initializes the JSON file if it doesn't exist."""
-        if not os.path.exists(DB_FILE):
-            with open(DB_FILE, 'w') as f:
-                json.dump({}, f)
+    def _ensure_config_exists(self):
+        if not os.path.exists(self.config_path):
+            default_config = {
+                "active_project": "Default",
+                "projects": {
+                    "Default": {"tags": ["General", "Note", "Todo"]}
+                }
+            }
+            self._save_config(default_config)
 
-    def _load_all(self):
-        with open(DB_FILE, 'r') as f:
-            return json.load(f)
+    def _load_config(self):
+        try:
+            if os.path.exists(self.config_path):
+                with open(self.config_path, 'r') as f:
+                    return json.load(f)
+        except Exception as e:
+            print(f"!! [ERROR] Loading JSON: {e}")
+        return {"active_project": "Default", "projects": {"Default": {"tags": []}}}
 
-    def _save_all(self, data):
-        with open(DB_FILE, 'w') as f:
-            json.dump(data, f, indent=4)
+    def _save_config(self, config):
+        try:
+            with open(self.config_path, 'w') as f:
+                json.dump(config, f, indent=4)
+        except Exception as e:
+            print(f"!! [ERROR] Saving JSON: {e}")
 
-    def add_entry(self, project_name, entry_data, user="ADMIN"):
-        """
-        Adds a structured entry to a specific project.
-        Structured to mimic a SQL 'INSERT' operation.
-        """
-        db = self._load_all()
+    def get_active_project_name(self):
+        config = self._load_config()
+        return config.get("active_project", "Default")
+
+    def update_project_config(self, project_name, tags=None):
+        config = self._load_config()
         
-        if project_name not in db:
-            db[project_name] = []
-
-        timestamp = datetime.now().isoformat()
+        # Ensure project exists
+        if project_name not in config["projects"]:
+            config["projects"][project_name] = {"tags": ["General"]}
         
-        new_entry = {
-            "id": str(uuid.uuid4()),
-            "name": entry_data.get('name'),
-            "tag": entry_data.get('tag'),
-            "type": entry_data.get('type'),
-            "summary": entry_data.get('summary'),
-            "findings": entry_data.get('findings', []),
-            "created_at": timestamp,
-            "created_by": user,
-            "last_edit_at": timestamp,
-            "last_edit_by": user
-        }
-
-        db[project_name].append(new_entry)
-        self._save_all(db)
-        return new_entry["id"]
-
-    def get_project_entries(self, project_name):
-        """Mimics 'SELECT * FROM entries WHERE project = ...'"""
-        db = self._load_all()
-        return db.get(project_name, [])
-
-    def update_entry(self, project_name, entry_id, update_data, user="ADMIN"):
-        """Mimics 'UPDATE entries SET ... WHERE id = ...'"""
-        db = self._load_all()
-        project_list = db.get(project_name, [])
-        
-        for entry in project_list:
-            if entry["id"] == entry_id:
-                # Update core fields
-                for key in ['name', 'tag', 'type', 'summary', 'findings']:
-                    if key in update_data:
-                        entry[key] = update_data[key]
-                
-                # Update metadata
-                entry["last_edit_at"] = datetime.now().isoformat()
-                entry["last_edit_by"] = user
-                
-                self._save_all(db)
-                return True
-        return False
-
-    def delete_entry(self, project_name, entry_id):
-        """Mimics 'DELETE FROM entries WHERE id = ...'"""
-        db = self._load_all()
-        if project_name in db:
-            db[project_name] = [e for e in db[project_name] if e["id"] != entry_id]
-            self._save_all(db)
-            return True
-        return False
+        # Update tags if they were sent (handles comma strings from UI)
+        if tags is not None:
+            if isinstance(tags, str):
+                tags = [t.strip() for t in tags.split(",") if t.strip()]
+            config["projects"][project_name]["tags"] = tags
+            
+        config["active_project"] = project_name
+        self._save_config(config)
+        return True
