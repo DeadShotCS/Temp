@@ -1,18 +1,41 @@
 const UI = {
+    sortState: { col: null, asc: true },
+
     switchTab: (tabId) => {
         document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-        const pane = document.getElementById('pane_' + tabId);
-        if (pane) pane.classList.add('active');
+        const target = document.getElementById('pane_' + tabId);
+        if (target) target.classList.add('active');
 
         document.querySelectorAll('.btn-nav').forEach(b => b.classList.remove('active'));
-        const btn = document.getElementById('nav_' + tabId);
-        if (btn) btn.classList.add('active');
+        const activeBtn = document.getElementById('nav_' + tabId);
+        if (activeBtn) activeBtn.classList.add('active');
+
+        if (tabId === 'view') Logic.loadEntries();
+    },
+
+    resetForm: () => {
+        const nameInp = document.getElementById('add_name');
+        nameInp.value = '';
+        nameInp.readOnly = false;
+        nameInp.style.borderLeft = "1px solid var(--border)";
+
+        const tagSel = document.getElementById('add_tag');
+        if (tagSel) {
+            tagSel.disabled = false;
+            tagSel.style.opacity = "1";
+            tagSel.value = tagSel.options[0].value;
+        }
+
+        document.getElementById('add_type').value = 'function';
+        document.getElementById('add_summary').value = '';
+        document.getElementById('findings_container').innerHTML = '';
+        UI.addFinding();
     },
 
     toggleCollapse: (header) => {
         const body = header.nextElementSibling;
         const indicator = header.querySelector('.status-indicator');
-        if (body.style.display === 'none' || body.style.display === '') {
+        if (body.style.display === 'none') {
             body.style.display = 'grid';
             indicator.innerText = '[ - ]';
         } else {
@@ -21,169 +44,154 @@ const UI = {
         }
     },
 
-    checkCustom: (el, mode) => {
-        if (el.value === 'custom') {
-            const parent = el.parentElement;
-            const originalId = el.id;
-            el.remove();
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.id = originalId;
-            input.placeholder = `Custom ${mode}...`;
-            parent.appendChild(input);
-            input.focus();
-        }
-    },
-
     addFinding: () => {
         const container = document.getElementById('findings_container');
         const template = document.getElementById('finding_template').content.cloneNode(true);
-        const count = container.querySelectorAll('.finding-block').length + 1;
-        template.querySelector('.block-id').innerText = `FINDING_BLOCK_${count.toString().padStart(2, '0')}`;
+        const idx = container.children.length + 1;
+        template.querySelector('.block-id').innerText = `FINDING_BLOCK_${idx.toString().padStart(2, '0')}`;
         container.appendChild(template);
     },
 
     removeFinding: () => {
         const container = document.getElementById('findings_container');
-        if (container.children.length > 0) {
+        if (container.lastElementChild) {
             container.lastElementChild.remove();
-        } else {
-            StatusHandler.show("NO_BLOCKS_TO_REMOVE", "warn");
         }
     },
 
-    resetForm: () => { 
-        if (confirm("CONFIRM_ACTION: RESET_ALL_FIELDS?")) location.reload(); 
+    showDeleteModal: (name) => {
+        const modal = document.getElementById('delete_modal');
+        document.getElementById('delete_target_name').innerText = `IDENTIFIER: ${name}`;
+        modal.style.display = 'flex';
+        
+        document.getElementById('confirm_delete_btn').onclick = async () => {
+            await Logic.executeDelete(name);
+            modal.style.display = 'none';
+        };
+    },
+
+    sortArchive: (n) => {
+        const body = document.getElementById("archive_body");
+        let rows = Array.from(body.rows);
+        const isAsc = UI.sortState.col === n ? !UI.sortState.asc : true;
+        UI.sortState = { col: n, asc: isAsc };
+
+        rows.sort((a, b) => {
+            let x = a.cells[n].innerText.toLowerCase();
+            let y = b.cells[n].innerText.toLowerCase();
+            return isAsc ? x.localeCompare(y) : y.localeCompare(x);
+        });
+
+        rows.forEach(row => body.appendChild(row));
+    },
+
+    filterArchive: () => {
+        const query = document.getElementById('archive_search').value.toLowerCase();
+        document.querySelectorAll('#archive_body tr').forEach(row => {
+            row.style.display = row.innerText.toLowerCase().includes(query) ? '' : 'none';
+        });
     }
 };
 
 const Logic = {
     init: async () => {
-        StatusHandler.show("SYSTEM_SYNC: PENDING...", "info");
-        try {
-            const resp = await fetch('/api/projects');
-            const data = await resp.json();
-            
-            if (data.status === "error") throw new Error(data.message);
-
-            const header = document.getElementById('header_proj_name');
-            if (header) header.innerText = data.current_project || "NULL_PROJECT";
-            
-            const projSelect = document.getElementById('set_proj_select');
-            if (projSelect) {
-                if (data.all_projects && data.all_projects.length > 0) {
-                    projSelect.innerHTML = data.all_projects.map(p => 
-                        `<option value="${p}" ${p === data.current_project ? 'selected' : ''}>${p}</option>`
-                    ).join('');
-                } else {
-                    projSelect.innerHTML = '<option value="">ERR: NO_PROJECTS_FOUND</option>';
-                    StatusHandler.show("CRITICAL: PROJECT_LIST_EMPTY", "error");
-                }
-            }
-
-            const setTags = document.getElementById('set_tags');
-            if (setTags) setTags.value = (data.config.tags || []).join(', ');
-
-            const tagSel = document.getElementById('add_tag');
-            if (tagSel) {
-                const tags = data.config.tags || [];
-                tagSel.innerHTML = tags.map(t => `<option value="${t}">${t}</option>`).join('') + '<option value="custom">Custom...</option>';
-            }
-            
-            if (document.getElementById('findings_container').children.length === 0) UI.addFinding();
-            StatusHandler.show("SYSTEM_SYNC: COMPLETE", "success");
-        } catch (e) { 
-            console.error("INIT_ERR:", e);
-            StatusHandler.show("INIT_FAILURE: FILE_ACCESS_DENIED", "error");
-        }
-    },
-
-    saveSettings: async () => {
-        const selectedProj = document.getElementById('set_proj_select').value;
-        const newProjInput = document.getElementById('set_proj_new');
-        const newProjName = newProjInput.value.trim();
-        const targetProject = newProjName || selectedProj;
-
-        if (!targetProject) {
-            StatusHandler.show("INPUT_REQUIRED: SPECIFY_PROJECT_NAME", "warn");
-            return;
-        }
-
-        StatusHandler.show(`PROJECT_MIGRATION: ${targetProject.toUpperCase()}...`, "info");
-
-        try {
-            const resp = await fetch('/api/config', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ project_name: targetProject })
-            });
-            
-            const result = await resp.json();
-            if (resp.ok) {
-                StatusHandler.show("MIGRATION_SUCCESS", "success");
-                newProjInput.value = "";
-                
-                // MANUAL UI UPDATE - NO RELOAD
-                const header = document.getElementById('header_proj_name');
-                if (header) header.innerText = targetProject;
-                
-                // Re-run init to refresh dropdowns and tags without a reload
-                Logic.init(); 
-            } else {
-                StatusHandler.show(`MIGRATION_FAILED: ${result.message}`, "error");
-            }
-        } catch (e) {
-            StatusHandler.show("NETWORK_ERROR: CONFIG_API_TIMEOUT", "error");
-        }
-    },
-
-    updateTagsOnly: async () => {
-        const tagsRaw = document.getElementById('set_tags').value;
-        const tags = tagsRaw.split(',').map(t => t.trim()).filter(t => t !== "");
+        const resp = await fetch('/api/projects');
+        const data = await resp.json();
+        document.getElementById('header_proj_name').innerText = data.current_project;
         
-        StatusHandler.show("TAG_SYNC: UPDATING_REGISTRY...", "info");
-
-        try {
-            const resp = await fetch('/api/config', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ tags: tags })
-            });
-
-            if (resp.ok) {
-                StatusHandler.show("TAG_SYNC: SUCCESS", "success");
-                setTimeout(() => location.reload(), 800);
-            } else {
-                StatusHandler.show("TAG_SYNC: FAILED", "error");
-            }
-        } catch (e) {
-            StatusHandler.show("NETWORK_ERROR: TAG_API_TIMEOUT", "error");
+        const tagSel = document.getElementById('add_tag');
+        if (tagSel) {
+            tagSel.innerHTML = data.config.tags.map(t => `<option value="${t}">${t}</option>`).join('') + '<option value="custom">Custom...</option>';
         }
+    },
+
+    loadEntries: async () => {
+        const resp = await fetch('/api/entries');
+        const data = await resp.json();
+        const body = document.getElementById('archive_body');
+        body.innerHTML = '';
+        data.forEach(item => {
+            const row = document.createElement('tr');
+            
+            const successCount = (item.findings || []).filter(f => f.status === 'Success').length;
+            const failCount = (item.findings || []).filter(f => f.status === 'Failure').length;
+            
+            let statusClass = 'status-grey';
+            if (successCount > 0) statusClass = 'status-green';
+            else if (failCount > 0) statusClass = 'status-red';
+            else if (item.findings?.length > 0) statusClass = 'status-blue';
+
+            row.innerHTML = `
+                <td class="cell-rel">
+                    <div class="status-bar ${statusClass}"></div>
+                    <b style="color:#fff">${item.name}</b>
+                </td>
+                <td><span style="color:var(--accent)">${item.tag}</span></td>
+                <td>${item.type || 'function'}</td>
+                <td class="audit-text">UP: ${item.last_updated_timestamp}</td>
+                <td>
+                    <button class="btn-alt" style="padding:2px 6px; font-size:9px;" onclick="Logic.editEntry('${item.name}')">EDIT</button>
+                    <button class="btn-warn" style="padding:2px 6px; font-size:9px;" onclick="Logic.deleteEntry('${item.name}')">DEL</button>
+                </td>
+            `;
+            body.appendChild(row);
+        });
+    },
+
+    editEntry: async (name) => {
+        const resp = await fetch(`/api/entries/${name}`);
+        const data = await resp.json();
+        
+        // 1. Switch Tab
+        UI.switchTab('add');
+        
+        // 2. Lock Name
+        const nameInp = document.getElementById('add_name');
+        nameInp.value = data.name;
+        nameInp.readOnly = true;
+        nameInp.style.borderLeft = "3px solid var(--accent)";
+
+        // 3. Lock Tag (The specific fix you requested)
+        const tagSel = document.getElementById('add_tag');
+        if (tagSel) {
+            tagSel.value = data.tag;
+            tagSel.disabled = true;
+            tagSel.style.opacity = "0.5";
+        }
+
+        document.getElementById('add_type').value = data.type || 'function';
+        document.getElementById('add_summary').value = data.summary || '';
+        
+        const container = document.getElementById('findings_container');
+        container.innerHTML = '';
+        data.findings.forEach(f => {
+            UI.addFinding();
+            const last = container.lastElementChild;
+            last.querySelector('.f-type').value = f.type;
+            last.querySelector('.f-status').value = f.status;
+            last.querySelector('.f-info').value = f.info;
+            last.querySelector('.f-req').value = f.req;
+            last.querySelector('.f-ver').value = f.ver;
+        });
     },
 
     saveEntry: async () => {
-        StatusHandler.show("DB_COMMIT: PENDING...", "info");
-
-        const findings = Array.from(document.querySelectorAll('.finding-block')).map(b => ({
-            type: b.querySelector('.f-type').value,
-            status: b.querySelector('.f-status').value,
-            info: b.querySelector('.f-info').value,
-            req: b.querySelector('.f-req').value,
-            ver: b.querySelector('.f-ver').value
-        }));
+        const nameVal = document.getElementById('add_name').value;
+        if (!nameVal) return;
 
         const payload = {
-            name: document.getElementById('add_name').value,
+            name: nameVal,
             tag: document.getElementById('add_tag').value,
             type: document.getElementById('add_type').value,
             summary: document.getElementById('add_summary').value,
-            findings: findings
+            findings: Array.from(document.querySelectorAll('.finding-block')).map(b => ({
+                type: b.querySelector('.f-type').value,
+                status: b.querySelector('.f-status').value,
+                info: b.querySelector('.f-info').value,
+                req: b.querySelector('.f-req').value,
+                ver: b.querySelector('.f-ver').value
+            }))
         };
-
-        if (!payload.name) {
-            StatusHandler.show("VALIDATION_ERROR: NAME_REQUIRED", "warn");
-            return;
-        }
 
         try {
             const resp = await fetch('/api/entries', {
@@ -191,14 +199,37 @@ const Logic = {
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(payload)
             });
+            const result = await resp.json();
             
-            if (resp.ok) {
-                StatusHandler.show("DB_COMMIT: SUCCESSFUL", "success");
-            } else {
-                StatusHandler.show("DB_COMMIT: FAILED", "error");
+            if (result.status === "success") {
+                if (window.StatusHandler) {
+                    StatusHandler.success("Entry Synchronized.");
+                } else {
+                    alert("Entry Synchronized.");
+                }
+                UI.resetForm();
+                UI.switchTab('view');
             }
         } catch (e) {
-            StatusHandler.show("NETWORK_ERROR: DB_API_UNREACHABLE", "error");
+            console.error(e);
+            if (window.StatusHandler) StatusHandler.error("Save Failed.");
+        }
+    },
+
+    deleteEntry: (name) => {
+        UI.showDeleteModal(name);
+    },
+
+    executeDelete: async (name) => {
+        try {
+            const resp = await fetch(`/api/entries/${name}`, { method: 'DELETE' });
+            const result = await resp.json();
+            if (result.status === "success") {
+                if (window.StatusHandler) StatusHandler.success(`Symbol ${name} purged.`);
+                Logic.loadEntries();
+            }
+        } catch (e) {
+            if (window.StatusHandler) StatusHandler.error("Purge Failed.");
         }
     }
 };

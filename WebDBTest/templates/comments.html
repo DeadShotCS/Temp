@@ -36,6 +36,7 @@
         .box-content { padding: 12px; }
 
         .filter-label { color: #e4e4e7; font-size: 9px; font-weight: 800; text-transform: uppercase; margin-bottom: 5px; display: block; }
+        .revert-link { color: var(--accent); cursor: pointer; font-size: 8px; text-decoration: underline; margin-left: 8px; font-weight: 400; }
         input, select, textarea { background: #000 !important; border: 1px solid #27272a !important; color: #ccc !important; font-family: var(--font); font-size: 11px !important; width: 100%; padding: 8px; border-radius: 0; margin-bottom: 0px; box-sizing: border-box; }
         
         .input-group { margin-bottom: 12px; }
@@ -56,6 +57,37 @@
         .btn-exe:hover { background: #907dc9; }
         .btn-alt { background: #1a1a1d; border: 1px solid #333; color: #fff; padding: 12px 20px; font-weight: 800; text-transform: uppercase; cursor: pointer; font-size: 10px; }
         .btn-warn { background: transparent; border: 1px solid var(--error-red); color: var(--error-red); padding: 12px 20px; font-weight: 800; text-transform: uppercase; cursor: pointer; font-size: 10px; }
+
+        /* NEW: VIEW DATA COMPONENT STYLES */
+        .archive-search { border: 1px solid var(--accent) !important; margin-bottom: 15px; }
+        .archive-table { width: 100%; border-collapse: collapse; }
+        .archive-table th { background: #111114; color: var(--accent); font-size: 9px; padding: 10px; border: 1px solid var(--border); cursor: pointer; text-align: left; text-transform: uppercase; }
+        .archive-table td { border: 1px solid var(--border); padding: 8px; vertical-align: top; font-size: 10px; }
+        
+        /* Status Markers */
+        .marker { width: 4px; height: 100%; position: absolute; left: 0; top: 0; }
+        .cell-rel { position: relative; padding-left: 12px !important; }
+        .status-red { background: #ef4444; } 
+        .status-blue { background: #3b82f6; }
+        .status-green { background: #22c55e; } 
+        .status-grey { background: #52525b; }
+
+        .collapsible-trigger { color: var(--comment); cursor: pointer; text-decoration: underline; font-size: 9px; margin-top: 5px; display: block; }
+        .collapsed-content { display: none; margin-top: 10px; padding: 10px; background: #000; border: 1px dashed #333; }
+        .audit-text { font-size: 8px !important; color: #52525b; line-height: 1.2; }
+
+        .status-bar {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+    }
+
+    .status-green { background-color: #2ecc71 !important; box-shadow: 0 0 8px #2ecc71; }
+    .status-blue  { background-color: #3498db !important; box-shadow: 0 0 8px #3498db; }
+    .status-red   { background-color: #ef4444 !important; box-shadow: 0 0 8px #ef4444; }
+    .status-grey  { background-color: #52525b !important; }
     </style>
 </head>
 <body>
@@ -134,7 +166,7 @@
                             <input type="text" id="add_name" placeholder="Symbol Name...">
                         </div>
                         <div class="col" id="tag_wrapper">
-                            <label class="filter-label">TAG</label>
+                            <label class="filter-label" id="tag_label">TAG</label>
                             <select id="add_tag" onchange="UI.checkCustom(this, 'tag')"></select>
                         </div>
                     </div>
@@ -146,7 +178,7 @@
                 <div class="box-content">
                     <div class="row">
                         <div class="col" id="type_wrapper" style="max-width: 180px;">
-                            <label class="filter-label">TYPE</label>
+                            <label class="filter-label" id="type_label">TYPE</label>
                             <select id="add_type" onchange="UI.checkCustom(this, 'type')">
                                 <option value="function">Function</option>
                                 <option value="service">Service</option>
@@ -178,8 +210,20 @@
         <div id="pane_view" class="tab-pane">
             <div class="inner-box">
                 <div class="box-header"><span class="box-title">Data Archive</span></div>
-                <div class="box-content" id="archive_list">
-                    <p style="color: var(--comment);">// ARCHIVE_READY_FOR_QUERY</p>
+                <div class="box-content">
+                    <input type="text" id="archive_search" class="archive-search" placeholder="SEARCH ARCHIVE (NAME, TAG, OR CONTENT)..." onkeyup="UI.filterArchive()">
+                    <table class="archive-table" id="archive_table">
+                        <thead>
+                            <tr>
+                                <th onclick="UI.sortArchive(0)" style="width: 25%;">Symbol</th>
+                                <th onclick="UI.sortArchive(1)" style="width: 15%;">Tag</th>
+                                <th onclick="UI.sortArchive(2)" style="width: 15%;">Type</th>
+                                <th onclick="UI.sortArchive(3)" style="width: 20%;">Audit</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody id="archive_body"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -200,8 +244,7 @@
                     <div class="row">
                         <div class="col">
                             <label class="filter-label">SWITCH TO PROJECT</label>
-                            <select id="set_proj_select">
-                                </select>
+                            <select id="set_proj_select"></select>
                         </div>
                         <div class="col">
                             <label class="filter-label">OR CREATE NEW PROJECT</label>
@@ -230,6 +273,28 @@
 
 {% include 'status_handler.html' %}
 <script src="/static/js/manager_core.js"></script>
-<script>window.onload = () => Logic.init();</script>
+<script>
+    UI.checkCustom = function(el, type) {
+        if (el.value === 'custom') {
+            const label = document.getElementById(type + '_label');
+            const originalHTML = el.outerHTML;
+
+            // Put REVERT link right after the Label text (left-aligned)
+            label.innerHTML = `${type.toUpperCase()} <span class="revert-link" onclick="UI.revertToSelect('${type}', \`${originalHTML.replace(/"/g, '&quot;')}\`)">[REVERT]</span>`;
+            
+            el.outerHTML = `<input type="text" id="add_${type}" placeholder="Enter Custom ${type}...">`;
+        }
+    };
+
+    UI.revertToSelect = function(type, originalHTML) {
+        const label = document.getElementById(type + '_label');
+        const input = document.getElementById('add_' + type);
+
+        label.innerHTML = type.toUpperCase();
+        input.outerHTML = originalHTML;
+    };
+
+    window.onload = () => Logic.init();
+</script>
 </body>
 </html>
