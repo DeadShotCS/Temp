@@ -2,110 +2,125 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Archive System // Manager</title>
+    <title>ARCHIVE SYSTEM // MANAGER</title>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root { --accent: #d946ef; --bg: #0a0a0c; --panel: #111114; --font: 'JetBrains Mono', monospace; --comment: #6a9955; --error-red: #ef4444; --border: #27272a; }
         
         body { background: var(--bg); color: #a1a1aa; font-family: var(--font); font-size: 11px; margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* MATCHING INDEX.HTML HEADER */
-        .title-bar { height: 45px; background: #000; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; }
-        .header-left { display: flex; align-items: center; gap: 15px; }
-        .title-text { color: var(--accent); font-weight: 700; text-transform: uppercase; text-decoration: none; font-size: 12px; }
-        .header-divider { color: #333; }
+        /* HEADER */
+        .title-bar { height: 40px; background: #000; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; flex-shrink: 0; }
+        .header-left { display: flex; align-items: center; gap: 10px; }
+        .title-text { color: var(--accent); font-weight: 700; text-transform: uppercase; text-decoration: none; font-size: 11px; letter-spacing: 1px; }
         .proj-display { color: #fff; font-weight: bold; }
         .user-display { color: var(--comment); font-weight: bold; }
-
-        .header-right { margin-left: auto; display: flex; align-items: center; gap: 15px; }
-        .nav-icon { color: #52525b; text-decoration: none; font-size: 14px; transition: 0.2s; }
-        .nav-icon:hover { color: var(--accent); }
+        .header-right { margin-left: auto; display: flex; align-items: center; gap: 20px; }
+        .nav-link { color: #52525b; text-decoration: none; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+        .nav-link.active { color: var(--accent); }
+        .logout-link { color: #ef4444; text-decoration: none; font-size: 10px; font-weight: 700; text-transform: uppercase; }
 
         .main-layout { display: flex; flex: 1; overflow: hidden; }
         
         /* SIDEBAR */
-        .sidebar { width: 240px; border-right: 1px solid var(--border); padding: 15px; background: var(--panel); }
-        .nav-label { color: #52525b; font-size: 9px; font-weight: 700; text-transform: uppercase; margin-bottom: 8px; display: block; }
-        .btn-nav { background: #1a1a1d; border: 1px solid #333; color: #aaa; font-size: 10px; padding: 12px; font-weight: 700; cursor: pointer; text-align: left; text-transform: uppercase; border-left: 3px solid transparent; margin-bottom: 4px; width: 100%; }
-        .btn-nav:hover { background: #222; color: #fff; }
+        .sidebar { width: 220px; border-right: 1px solid var(--border); padding: 12px; background: var(--panel); flex-shrink: 0; }
+        .nav-label { color: #52525b; font-size: 9px; font-weight: 700; text-transform: uppercase; margin-bottom: 6px; display: block; }
+        .btn-nav { background: #1a1a1d; border: 1px solid #333; color: #aaa; font-size: 10px; padding: 10px; font-weight: 700; cursor: pointer; text-align: left; text-transform: uppercase; border-left: 3px solid transparent; margin-bottom: 4px; width: 100%; }
         .btn-nav.active { border-left-color: var(--accent); color: #fff; background: #000; }
 
-        /* VIEWPORT */
-        .viewport { flex: 1; padding: 25px; background: #050506; overflow-y: auto; display: flex; flex-direction: column; padding-bottom: 100px; }
-        .inner-box { background: #0c0c0e; border: 1px solid #18181b; margin-bottom: 25px; }
-        .box-header { background: #111114; border-bottom: 1px solid #18181b; padding: 8px 15px; }
-        .box-title { color: var(--accent); font-weight: 700; font-size: 10px; text-transform: uppercase; }
-        .box-content { padding: 20px; }
+        /* VIEWPORT - COMPACT */
+        .viewport { flex: 1; padding: 15px; background: #050506; overflow-y: auto; display: flex; flex-direction: column; }
+        .inner-box { background: #0c0c0e; border: 1px solid #18181b; margin-bottom: 15px; }
+        .box-header { background: #111114; border-bottom: 1px solid #18181b; padding: 6px 12px; }
+        .box-title { color: var(--accent); font-weight: 800; font-size: 10px; text-transform: uppercase; }
+        .box-content { padding: 12px; }
 
-        /* FORM PADDING & BOLDING */
-        .filter-label { color: #71717a; font-size: 9px; font-weight: 800; text-transform: uppercase; margin-bottom: 8px; display: block; }
-        input, select, textarea { background: #000 !important; border: 1px solid #27272a !important; color: #ccc !important; font-family: var(--font); font-size: 11px !important; width: 100%; padding: 10px; border-radius: 0; margin-bottom: 10px; }
-        input:focus, select:focus, textarea:focus { border-color: var(--accent) !important; outline: none; }
+        /* LABELS & INPUTS */
+        .filter-label { color: #e4e4e7; font-size: 9px; font-weight: 800; text-transform: uppercase; margin-bottom: 6px; display: block; }
+        input, select, textarea { background: #000 !important; border: 1px solid #27272a !important; color: #ccc !important; font-family: var(--font); font-size: 11px !important; width: 100%; padding: 8px; border-radius: 0; margin-bottom: 10px; box-sizing: border-box; }
         
         .tab-pane { display: none; }
         .tab-pane.active { display: block; }
 
-        /* FINDINGS GRID */
-        .finding-block { border: 1px solid #18181b; background: #08080a; margin-bottom: 20px; }
-        .finding-header { background: #111114; padding: 8px 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 9px; font-weight: bold; color: #52525b; border-bottom: 1px solid #18181b; }
-        .finding-body { padding: 20px; display: grid; grid-template-columns: 200px 1.5fr 1fr; gap: 25px; }
-        .finding-body.collapsed { display: none; }
+        /* FINDINGS */
+        .finding-block { border: 1px solid #18181b; background: #08080a; margin-bottom: 10px; }
+        .finding-header { background: #111114; padding: 8px 12px; font-weight: 800; color: #71717a; border-bottom: 1px solid #18181b; text-transform: uppercase; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .finding-body { padding: 12px; display: grid; grid-template-columns: 180px 1.4fr 1fr; gap: 20px; }
 
         .row { display: flex; gap: 20px; } .col { flex: 1; }
 
-        /* FIXED ACTION BAR */
-        .action-bar { background: #000; border-top: 1px solid var(--border); padding: 15px 25px; display: flex; align-items: center; gap: 12px; position: fixed; bottom: 0; left: 240px; right: 0; z-index: 1000; }
-        .btn-exe { background: var(--accent); border: none; color: #fff; padding: 12px 25px; font-weight: 700; text-transform: uppercase; cursor: pointer; font-size: 10px; }
-        .btn-alt { background: #1a1a1d; border: 1px solid #333; color: #ccc; padding: 12px 20px; font-weight: 700; text-transform: uppercase; cursor: pointer; font-size: 10px; }
-        .btn-reset { background: transparent; border: 1px solid var(--error-red); color: var(--error-red); padding: 12px 20px; font-weight: 700; text-transform: uppercase; cursor: pointer; font-size: 10px; margin-left: auto; }
-        .btn-reset:hover { background: var(--error-red); color: #fff; }
+        /* ACTION BAR */
+        .action-bar { border-top: 1px solid var(--border); padding: 15px 0; margin-top: 5px; display: flex; align-items: center; gap: 10px; }
+        .btn-exe { background: var(--accent); border: none; color: #fff; padding: 10px 20px; font-weight: 800; text-transform: uppercase; cursor: pointer; font-size: 10px; }
+        .btn-alt { background: #1a1a1d; border: 1px solid #333; color: #fff; padding: 10px 18px; font-weight: 800; text-transform: uppercase; cursor: pointer; font-size: 10px; }
+        .btn-warn { background: transparent; border: 1px solid var(--error-red); color: var(--error-red); padding: 10px 18px; font-weight: 800; text-transform: uppercase; cursor: pointer; font-size: 10px; }
     </style>
 </head>
 <body>
 
+<template id="finding_template">
+    <div class="finding-block">
+        <div class="finding-header" onclick="UI.toggleCollapse(this)">
+            <span class="block-id">FINDING_BLOCK_01</span>
+            <span class="status-indicator">[ - ]</span>
+        </div>
+        <div class="finding-body">
+            <div>
+                <label class="filter-label">FINDING TYPE</label>
+                <select class="f-type"><option>Bug</option><option>Useful</option><option>Unknown</option></select>
+                <label class="filter-label" style="margin-top:10px;">STATUS</label>
+                <select class="f-status"><option>Success</option><option>Failure</option><option>Unverified</option></select>
+            </div>
+            <div>
+                <label class="filter-label">DETAILS</label>
+                <textarea class="f-info" style="height: 100px; resize: none;"></textarea>
+            </div>
+            <div>
+                <label class="filter-label">REQUIREMENTS</label>
+                <textarea class="f-req" style="height: 35px; resize: none; margin-bottom: 10px;"></textarea>
+                <label class="filter-label">VERIFICATION</label>
+                <textarea class="f-ver" style="height: 35px; resize: none;"></textarea>
+            </div>
+        </div>
+    </div>
+</template>
+
 <div class="title-bar">
     <div class="header-left">
-        <a href="/" class="title-text">Archive // Manager</a>
-        <span class="header-divider">|</span>
-        <span style="font-size: 9px; color: #52525b;">PROJECT:</span>
-        <span id="header_proj_name" class="proj-display">LOADING...</span>
-        <span class="header-divider">|</span>
-        <span style="font-size: 9px; color: #52525b;">OP:</span>
+        <a href="/" class="title-text">ARCHIVE SYSTEM // MANAGER</a>
+        <span style="color:#333; margin:0 5px;">|</span>
+        <span id="header_proj_name" class="proj-display">...</span>
+        <span style="color:#333; margin:0 5px;">|</span>
         <span class="user-display">ADMIN</span>
     </div>
-    
     <div class="header-right">
-        <div id="header_tags" style="display: flex; gap: 8px; margin-right: 15px;"></div>
-        <a href="#" class="nav-icon">⟳</a>
-        <a href="#" class="nav-icon">⚙</a>
-        <a href="https://github.com/DeadShotCS/Temp" class="nav-icon" target="_blank">GITHUB</a>
+        <a href="/" class="nav-link">EXPLORER</a>
+        <a href="/manager" class="nav-link active">COMMENT MANAGER</a>
+        <a href="/logout" class="logout-link">LOGOUT</a>
     </div>
 </div>
 
 <div class="main-layout">
     <div class="sidebar">
-        <label class="nav-label">System Navigation</label>
-        <button class="btn-nav active" id="btn_add" onclick="UI.switchTab('add')">Add Entry</button>
-        <button class="btn-nav" id="btn_view" onclick="UI.switchTab('view')">View Records</button>
-        <button class="btn-nav" id="btn_settings" onclick="UI.switchTab('settings')">Settings</button>
-        <button class="btn-nav" id="btn_export" onclick="UI.switchTab('export')">Data Export</button>
+        <label class="nav-label">Navigation</label>
+        <button class="btn-nav active" id="nav_add" onclick="UI.switchTab('add')">Add Entry</button>
+        <button class="btn-nav" id="nav_view" onclick="UI.switchTab('view')">View Data</button>
+        <button class="btn-nav" id="nav_export" onclick="UI.switchTab('export')">Export Data</button>
     </div>
 
     <div class="viewport">
-        
         <div id="pane_add" class="tab-pane active">
             <div class="inner-box">
                 <div class="box-header"><span class="box-title">01 Information</span></div>
                 <div class="box-content">
                     <div class="row">
                         <div class="col">
-                            <label class="filter-label">SYMBOL NAME</label>
-                            <input type="text" id="add_name" placeholder="e.g., NtCreateThreadEx">
+                            <label class="filter-label">NAME</label>
+                            <input type="text" id="add_name" placeholder="Symbol Name...">
                         </div>
-                        <div class="col">
-                            <label class="filter-label">PROJECT TAG</label>
-                            <select id="add_tag_select" onchange="UI.handleCustomField(this, 'tag_cust')"></select>
-                            <input type="text" id="add_tag_cust" style="display:none; margin-top:5px;" placeholder="Enter custom tag...">
+                        <div class="col" id="tag_wrapper">
+                            <label class="filter-label">TAG</label>
+                            <select id="add_tag" onchange="UI.checkCustom(this, 'tag')"></select>
                         </div>
                     </div>
                 </div>
@@ -115,19 +130,18 @@
                 <div class="box-header"><span class="box-title">02 Overview</span></div>
                 <div class="box-content">
                     <div class="row">
-                        <div class="col" style="max-width: 200px;">
-                            <label class="filter-label">FUNCTION TYPE</label>
-                            <select id="add_func_type" onchange="UI.handleCustomField(this, 'type_cust')">
+                        <div class="col" id="type_wrapper" style="max-width: 180px;">
+                            <label class="filter-label">TYPE</label>
+                            <select id="add_type" onchange="UI.checkCustom(this, 'type')">
                                 <option value="function">Function</option>
                                 <option value="service">Service</option>
-                                <option value="driver">Driver Entry</option>
+                                <option value="driver">Driver</option>
                                 <option value="custom">Custom...</option>
                             </select>
-                            <input type="text" id="add_type_cust" style="display:none; margin-top:5px;" placeholder="Enter type...">
                         </div>
                         <div class="col">
                             <label class="filter-label">SUMMARY / DESCRIPTION</label>
-                            <textarea id="add_summary" style="height: 60px; resize: none;"></textarea>
+                            <textarea id="add_summary" style="height: 50px; resize: none;"></textarea>
                         </div>
                     </div>
                 </div>
@@ -136,63 +150,16 @@
             <div class="inner-box">
                 <div class="box-header"><span class="box-title">03 Findings</span></div>
                 <div class="box-content" id="findings_container">
-                    
-                    <div class="finding-block">
-                        <div class="finding-header" onclick="UI.toggleCollapse(this)">
-                            <span>FINDING_BLOCK_01</span>
-                            <span class="toggle-icon">[ - ]</span>
-                        </div>
-                        <div class="finding-body">
-                            <div>
-                                <label class="filter-label">FINDING TYPE</label>
-                                <select class="f-type">
-                                    <option>Bug</option>
-                                    <option>Useful</option>
-                                    <option>Unknown</option>
-                                </select>
-                                <label class="filter-label" style="margin-top:15px;">STATUS</label>
-                                <select class="f-status">
-                                    <option>Success</option>
-                                    <option>Failure</option>
-                                    <option>Unverified</option>
-                                </select>
-                            </div>
-                            
-                            <div>
-                                <label class="filter-label">DETAILS</label>
-                                <textarea class="f-info" style="height: 140px; resize: none;"></textarea>
-                            </div>
-
-                            <div>
-                                <label class="filter-label">REQUIREMENTS</label>
-                                <textarea class="f-req" style="height: 55px; resize: none; margin-bottom: 15px;"></textarea>
-                                <label class="filter-label">VERIFICATION</label>
-                                <textarea class="f-ver" style="height: 55px; resize: none;"></textarea>
-                            </div>
-                        </div>
                     </div>
-
-                </div>
             </div>
 
             <div class="action-bar">
                 <button class="btn-exe" onclick="Logic.saveEntry()">SAVE ENTRY</button>
-                <button class="btn-alt" onclick="UI.addFinding()">+ ADD FINDING</button>
-                <button class="btn-alt" style="color: var(--error-red);" onclick="UI.removeFinding()">- REMOVE LAST</button>
-                <button class="btn-reset" onclick="UI.resetForm()">RESET FORM</button>
+                <button class="btn-alt" onclick="UI.resetForm()">RESET FORM</button>
+                <button class="btn-alt" onclick="UI.addFinding()">ADD FINDING</button>
+                <button class="btn-warn" onclick="UI.removeFinding()">REMOVE LAST</button>
             </div>
         </div>
-
-        <div id="pane_settings" class="tab-pane">
-            <div class="inner-box">
-                <div class="box-header"><span class="box-title">Project Context</span></div>
-                <div class="box-content">
-                    <label class="filter-label">ACTIVE PROJECT</label>
-                    <select id="settings_project_select" onchange="Logic.switchProject(this.value)"></select>
-                </div>
-            </div>
-        </div>
-
     </div>
 </div>
 
