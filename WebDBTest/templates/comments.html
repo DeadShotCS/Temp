@@ -10,6 +10,7 @@
         
         body { background: var(--bg); color: #a1a1aa; font-family: var(--font); font-size: 11px; margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
+        /* Header */
         .title-bar { height: 40px; background: #000; border-bottom: 1px solid #27272a; display: flex; align-items: center; padding: 0 15px; }
         .title-text { color: var(--accent); font-weight: 700; cursor: pointer; text-transform: uppercase; text-decoration: none; }
         .nav-link { color: #52525b; text-decoration: none; font-weight: 700; text-transform: uppercase; font-size: 10px; transition: 0.2s; }
@@ -18,36 +19,40 @@
 
         .main-layout { display: flex; flex: 1; overflow: hidden; }
         
-        /* Sidebar - Strict 340px */
+        /* Sidebar (340px) */
         .sidebar { width: 340px; border-right: 1px solid #27272a; padding: 15px; background: var(--panel); display: flex; flex-direction: column; overflow-y: auto; }
         .filter-label { color: #e4e4e7; font-size: 10px; font-weight: 700; text-transform: uppercase; margin-top: 15px; margin-bottom: 5px; display: block; }
         
         input, select, textarea { background: #000 !important; border: 1px solid #333 !important; color: #ccc !important; font-family: var(--font); font-size: 11px !important; width: 100%; padding: 8px; border-radius: 0; }
         input:focus, textarea:focus { border-color: var(--accent) !important; outline: none; }
 
-        /* Tabs Logic */
-        .nav-group { margin-top: 5px; display: flex; flex-direction: column; gap: 2px; }
-        .btn-nav { background: #1a1a1d; border: 1px solid #333; color: #aaa; font-size: 10px; padding: 12px; font-weight: 700; cursor: pointer; text-align: left; text-transform: uppercase; }
+        /* Navigation Buttons */
+        .nav-group { display: flex; flex-direction: column; gap: 2px; }
+        .btn-nav { background: #1a1a1d; border: 1px solid #333; color: #aaa; font-size: 10px; padding: 12px; font-weight: 700; cursor: pointer; text-align: left; text-transform: uppercase; border-left: 3px solid transparent; }
         .btn-nav:hover { background: #222; color: #fff; }
-        .btn-nav.active { border-left: 3px solid var(--accent); color: #fff; background: #000; }
+        .btn-nav.active { border-left-color: var(--accent); color: #fff; background: #000; }
 
         .btn-exe { background: var(--accent); border: none; color: #fff; width: 100%; padding: 12px; font-weight: 700; margin-top: 20px; text-transform: uppercase; cursor: pointer; }
         .btn-exe:hover { filter: brightness(1.1); }
 
-        /* Viewport Workspace */
+        /* Viewport Content */
         .viewport { flex: 1; padding: 20px; background: #050506; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
         .inner-box { background: #000; border: 1px solid #18181b; padding: 20px; }
         
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
 
-        /* Radio Buttons */
-        .radio-set { display: flex; gap: 15px; margin-top: 5px; }
-        .radio-option { display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 10px; }
-        .radio-option input { width: auto !important; margin: 0; }
+        /* Table Styling for View Tab */
+        .data-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .data-table th { color: var(--accent); text-align: left; padding: 10px; border-bottom: 1px solid #27272a; font-size: 10px; }
+        .data-table td { padding: 10px; border-bottom: 1px solid #111; color: #9cdcfe; }
+        .data-table tr:hover { background: #0a0a0c; }
 
-        /* Finding Block Styling */
-        .finding-block { border-top: 1px solid #27272a; padding-top: 15px; margin-top: 15px; }
+        /* Finding Blocks */
+        .finding-block { border-top: 1px solid #27272a; padding-top: 15px; margin-top: 15px; position: relative; }
+        .radio-group { display: flex; gap: 15px; margin-top: 5px; }
+        .radio-item { display: flex; align-items: center; gap: 5px; font-size: 10px; cursor: pointer; }
+        .radio-item input { width: auto !important; margin: 0; accent-color: var(--accent); }
     </style>
 </head>
 <body>
@@ -63,128 +68,145 @@
 
 <div class="main-layout">
     <div class="sidebar">
-        <label class="filter-label">Navigation</label>
+        <label class="filter-label">System Navigation</label>
         <div class="nav-group">
-            <button class="btn-nav active" onclick="UI.switchTab(event, 'add')">Add Entry</button>
-            <button class="btn-nav" onclick="UI.switchTab(event, 'view')">View Edit Data</button>
-            <button class="btn-nav" onclick="UI.switchTab(event, 'settings')">Settings</button>
-            <button class="btn-nav" onclick="UI.switchTab(event, 'export')">Export Data</button>
+            <button class="btn-nav active" id="btn_add" onclick="UI.switchTab('add')">Add Entry</button>
+            <button class="btn-nav" id="btn_view" onclick="UI.switchTab('view')">View Edit Data</button>
+            <button class="btn-nav" id="btn_settings" onclick="UI.switchTab('settings')">Settings</button>
+            <button class="btn-nav" id="btn_export" onclick="UI.switchTab('export')">Export Data</button>
         </div>
 
-        <div id="side_add_info" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #27272a;">
+        <div id="sidebar_context" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #27272a;">
+            <label class="filter-label">Current Status</label>
             <div style="font-size: 9px; color: #52525b; line-height: 1.6;">
-                <span style="color: var(--accent); font-weight: bold;">STATUS:</span> NEW_ENTRY<br>
-                <span style="color: var(--accent); font-weight: bold;">USER:</span> JMD<br>
-                <span style="color: var(--accent); font-weight: bold;">AUTO_INFO:</span> NOT_SAVED
+                PROJECT: <span id="cur_proj" style="color: var(--accent);">...</span><br>
+                STATUS: <span style="color: var(--comment);">READY_FOR_INPUT</span><br>
+                AUTH: <span style="color: #ccc;">JMD</span>
             </div>
-            <button class="btn-exe" onclick="Data.saveEntry()">Save Entry</button>
+            <button class="btn-exe" id="save_trigger" onclick="Logic.saveEntry()">Commit Changes</button>
         </div>
     </div>
 
     <div class="viewport">
-        <div id="tab_add" class="tab-content active">
+        
+        <div id="pane_add" class="tab-pane active">
             <div class="inner-box">
                 <div class="row">
                     <div class="col-8">
-                        <label class="filter-label">Main Name</label>
-                        <input type="text" id="main_name" placeholder="e.g. PsGetCurrentProcess">
+                        <label class="filter-label">Main Name (Symbol/Function)</label>
+                        <input type="text" id="add_name" placeholder="e.g. NtCreateUserProcess">
                     </div>
                     <div class="col-4">
-                        <label class="filter-label">Type</label>
-                        <div class="radio-set">
-                            <label class="radio-option"><input type="radio" name="folder_type" checked> Folder</label>
-                            <label class="radio-option"><input type="radio" name="folder_type"> Custom</label>
+                        <label class="filter-label">Lookup Type</label>
+                        <div class="radio-group">
+                            <label class="radio-item"><input type="radio" name="lookup" checked> Folder</label>
+                            <label class="radio-item"><input type="radio" name="lookup"> Custom</label>
                         </div>
                     </div>
                 </div>
-                
-                <label class="filter-label" style="margin-top:15px;">Path</label>
-                <select id="path_select">
+                <label class="filter-label" style="margin-top:15px;">Target Path</label>
+                <select id="add_path">
                     <option>E:\Learning-Certs\Notes\DSDriver\DSDriver</option>
                 </select>
             </div>
 
-            <div class="inner-box" style="margin-top: 15px;">
+            <div class="inner-box">
                 <div class="row">
                     <div class="col-2">
-                        <label class="filter-label">Type</label>
+                        <label class="filter-label">Category</label>
                         <div class="nav-group" style="gap:5px;">
-                            <label class="radio-option"><input type="radio" name="entry_type" checked> Function</label>
-                            <label class="radio-option"><input type="radio" name="entry_type"> Service</label>
-                            <label class="radio-option"><input type="radio" name="entry_type"> Other</label>
+                            <label class="radio-item"><input type="radio" name="cat" checked> Function</label>
+                            <label class="radio-item"><input type="radio" name="cat"> Service</label>
+                            <label class="radio-item"><input type="radio" name="cat"> Other</label>
                         </div>
                     </div>
                     <div class="col-10">
                         <label class="filter-label">Description / Summary</label>
-                        <textarea id="summary" style="height: 100px; resize: none;"></textarea>
+                        <textarea id="add_summary" style="height: 100px; resize: none;"></textarea>
                     </div>
                 </div>
             </div>
 
-            <div class="inner-box" style="margin-top: 15px;">
+            <div class="inner-box">
                 <div id="findings_container">
                     <div class="finding-block">
                         <div class="row">
                             <div class="col-2">
-                                <label class="filter-label">Finding Type</label>
+                                <label class="filter-label">Type</label>
                                 <div class="nav-group" style="gap:5px;">
-                                    <label class="radio-option"><input type="radio" name="f_type_0"> Bug</label>
-                                    <label class="radio-option"><input type="radio" name="f_type_0"> Useful</label>
-                                    <label class="radio-option"><input type="radio" name="f_type_0" checked> Unknown</label>
+                                    <label class="radio-item"><input type="radio" name="ft_0"> Bug</label>
+                                    <label class="radio-item"><input type="radio" name="ft_0"> Useful</label>
+                                    <label class="radio-item"><input type="radio" name="ft_0" checked> Unknown</label>
                                 </div>
                             </div>
                             <div class="col-5">
-                                <label class="filter-label">Finding Details/Info</label>
-                                <textarea style="height: 120px; resize: none;"></textarea>
+                                <label class="filter-label">Finding Details</label>
+                                <textarea class="f-info" style="height: 120px; resize: none;"></textarea>
                             </div>
                             <div class="col-5">
                                 <label class="filter-label">Requirements</label>
-                                <textarea style="height: 50px; resize: none; margin-bottom: 10px;"></textarea>
+                                <textarea class="f-req" style="height: 50px; resize: none; margin-bottom: 10px;"></textarea>
                                 <label class="filter-label">Verification</label>
-                                <textarea style="height: 50px; resize: none;"></textarea>
+                                <textarea class="f-ver" style="height: 50px; resize: none;"></textarea>
                             </div>
                         </div>
                     </div>
                 </div>
-                
-                <div class="row mt-3" style="gap: 10px; padding: 0 15px;">
-                    <button class="btn-nav" style="flex:1; text-align:center;" onclick="UI.addFinding()">+ Add Finding</button>
-                    <button class="btn-nav" style="flex:1; text-align:center; color: var(--error-red);" onclick="UI.removeFinding()">- Remove Last</button>
+                <div class="row mt-3 px-3" style="gap: 10px;">
+                    <button class="btn-nav" style="flex:1; text-align:center" onclick="UI.addFinding()">+ Add Finding</button>
+                    <button class="btn-nav" style="flex:1; text-align:center; color: var(--error-red)" onclick="UI.removeFinding()">- Remove Block</button>
                 </div>
             </div>
         </div>
 
-        <div id="tab_view" class="tab-content">
-            <div class="inner-box">
-                <label class="filter-label">// System Registry View</label>
-                <div id="registry_output" style="color: var(--comment);">// Loading existing entries...</div>
+        <div id="pane_view" class="tab-pane">
+            <div class="inner-box" style="padding:0;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>SYMBOL_NAME</th>
+                            <th>MODULE_PATH</th>
+                            <th>ENTRY_TYPE</th>
+                            <th style="text-align:right">ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="view_table_body"></tbody>
+                </table>
             </div>
         </div>
+
+        <div id="pane_settings" class="tab-pane">
+            <div class="inner-box">
+                <label class="filter-label">Active Project Context</label>
+                <div class="row g-2">
+                    <div class="col-9"><select id="set_project_select"></select></div>
+                    <div class="col-3"><button class="btn-nav" style="width:100%; text-align:center" onclick="Logic.switchProject()">Switch</button></div>
+                </div>
+
+                <label class="filter-label" style="margin-top:25px;">Registered Tag Library</label>
+                <div id="tag_cloud" style="margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 5px;"></div>
+                <div class="row g-2">
+                    <div class="col-9"><input type="text" id="new_tag_input" placeholder="Enter new tag name..."></div>
+                    <div class="col-3"><button class="btn-nav" style="width:100%; text-align:center" onclick="Logic.addTag()">Register</button></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="pane_export" class="tab-pane">
+            <div class="inner-box">
+                <label class="filter-label">Export Format</label>
+                <select id="export_format">
+                    <option value="json">Structured JSON</option>
+                    <option value="csv">Database CSV</option>
+                </select>
+                <button class="btn-exe">Generate Data Export</button>
+            </div>
+        </div>
+
     </div>
 </div>
 
-<script>
-    const UI = {
-        switchTab: (event, tabId) => {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.btn-nav').forEach(b => b.classList.remove('active'));
-            document.getElementById('tab_' + tabId).classList.add('active');
-            event.currentTarget.classList.add('active');
-        },
-        addFinding: () => {
-            const container = document.getElementById('findings_container');
-            const clone = container.firstElementChild.cloneNode(true);
-            // Unique radio names for the new block
-            const id = Date.now();
-            clone.querySelectorAll('input').forEach(i => i.name = 'f_type_' + id);
-            clone.querySelectorAll('textarea').forEach(t => t.value = '');
-            container.appendChild(clone);
-        },
-        removeFinding: () => {
-            const container = document.getElementById('findings_container');
-            if (container.children.length > 1) container.lastElementChild.remove();
-        }
-    }
-</script>
+<script src="/static/js/manager_core.js"></script>
+<script>window.onload = () => Logic.init();</script>
 </body>
 </html>
