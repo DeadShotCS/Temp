@@ -54,7 +54,7 @@
     <div class="header-left" style="display: flex; align-items: center; gap: 20px;">
         <a href="/" class="title-text">Archive System</a>
         <span class="proj-display" style="color: #52525b; font-size: 10px; font-weight: 700;">
-            PROJECT: <span id="header_proj_name" style="color: var(--accent);">{{ current_project or 'NONE_LOADED' }}</span>
+            PROJECT: <span id="header_proj_name" style="color: var(--accent);">{{ session['active_project'] or 'NONE_LOADED' }}</span>
         </span>
         <span class="user-display" style="color: #52525b; font-size: 10px; font-weight: 700;">
             USER: <span style="color: #e4e4e7;">ADMIN</span>

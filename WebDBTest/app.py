@@ -1,5 +1,5 @@
 from flask import Flask
-from routes.explorer import explorer_bp
+from routes.explorer_routes import explorer_bp
 from routes.manager_routes import mgmt_bp
 import os
 

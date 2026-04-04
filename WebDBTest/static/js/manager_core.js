@@ -10,26 +10,28 @@ const UI = {
         const activeBtn = document.getElementById('nav_' + tabId);
         if (activeBtn) activeBtn.classList.add('active');
 
-        if (tabId === 'view') Logic.loadEntries();
+        if (tabId === 'view') Logic.loadArchive();
     },
 
     resetForm: () => {
         const nameInp = document.getElementById('add_name');
-        nameInp.value = '';
-        nameInp.readOnly = false;
-        nameInp.style.borderLeft = "1px solid var(--border)";
+        if (nameInp) {
+            nameInp.value = '';
+            nameInp.readOnly = false;
+            nameInp.style.borderLeft = "1px solid var(--border)";
+        }
 
         const tagSel = document.getElementById('add_tag');
         if (tagSel) {
             tagSel.disabled = false;
             tagSel.style.opacity = "1";
-            tagSel.value = tagSel.options[0].value;
+            tagSel.value = tagSel.options[0]?.value || "";
         }
 
         document.getElementById('add_type').value = 'function';
         document.getElementById('add_summary').value = '';
         document.getElementById('findings_container').innerHTML = '';
-        UI.addFinding();
+        // UI.addFinding();
     },
 
     toggleCollapse: (header) => {
@@ -94,64 +96,166 @@ const UI = {
 };
 
 const Logic = {
-    init: async () => {
-        const resp = await fetch('/api/projects');
-        const data = await resp.json();
-        document.getElementById('header_proj_name').innerText = data.current_project;
+    currentEditingId: null,
+
+    init: async function() {
+        try { 
+            const projectData = await this.loadProjects(); 
+            if (projectData?.config?.tags) {
+                const settingsTagInp = document.getElementById('set_tags');
+                if (settingsTagInp) {
+                    settingsTagInp.value = projectData.config.tags.join(', ');
+                }
+            }
+        } catch(e) { console.error("INIT_ERR_PROJ", e); }
+
+        try { await this.loadTags(); } catch(e) { console.error("INIT_ERR_TAGS", e); }
+        try { await this.loadArchive(); } catch(e) { console.error("INIT_ERR_ARCH", e); }
         
-        const tagSel = document.getElementById('add_tag');
-        if (tagSel) {
-            tagSel.innerHTML = data.config.tags.map(t => `<option value="${t}">${t}</option>`).join('') + '<option value="custom">Custom...</option>';
-        }
+        // UI.addFinding(); 
     },
 
-    loadEntries: async () => {
-        const resp = await fetch('/api/entries');
-        const data = await resp.json();
-        const body = document.getElementById('archive_body');
-        body.innerHTML = '';
-        data.forEach(item => {
-            const row = document.createElement('tr');
-            
-            const successCount = (item.findings || []).filter(f => f.status === 'Success').length;
-            const failCount = (item.findings || []).filter(f => f.status === 'Failure').length;
-            
-            let statusClass = 'status-grey';
-            if (successCount > 0) statusClass = 'status-green';
-            else if (failCount > 0) statusClass = 'status-red';
-            else if (item.findings?.length > 0) statusClass = 'status-blue';
+    loadProjects: async function() {
+        const select = document.getElementById('set_proj_select');
+        if (!select) return;
 
-            row.innerHTML = `
-                <td class="cell-rel">
-                    <div class="status-bar ${statusClass}"></div>
-                    <b style="color:#fff">${item.name}</b>
-                </td>
-                <td><span style="color:var(--accent)">${item.tag}</span></td>
-                <td>${item.type || 'function'}</td>
-                <td class="audit-text">UP: ${item.last_updated_timestamp}</td>
-                <td>
-                    <button class="btn-alt" style="padding:2px 6px; font-size:9px;" onclick="Logic.editEntry('${item.name}')">EDIT</button>
-                    <button class="btn-warn" style="padding:2px 6px; font-size:9px;" onclick="Logic.deleteEntry('${item.name}')">DEL</button>
-                </td>
-            `;
-            body.appendChild(row);
-        });
+        try {
+            const res = await fetch('/api/projects');
+            if (!res.ok) return;
+
+            const data = await res.json();
+            select.innerHTML = '';
+            const list = data.all_projects || [];
+
+            if (list.length === 0) {
+                select.innerHTML = '<option value="">-- NO PROJECTS FOUND --</option>';
+                return;
+            }
+
+            list.forEach(p => {
+                const opt = document.createElement('option');
+                const name = (typeof p === 'object') ? p.name : p;
+                opt.value = name;
+                opt.textContent = name;
+                if (name === data.current_project) opt.selected = true;
+                select.appendChild(opt);
+            });
+
+            return data;
+        } catch (e) { console.error("LOAD_PROJ_FAIL", e); }
+    },
+
+    updateTagsOnly: async function() {
+        const tagInp = document.getElementById('set_tags'); 
+        if (!tagInp) return;
+
+        const tags = tagInp.value.split(',').map(t => t.trim()).filter(t => t !== "");
+        
+        try {
+            const res = await fetch('/api/projects/tags', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tags: tags })
+            });
+
+            const text = await res.text();
+            let data;
+            try { data = JSON.parse(text); } catch (e) {
+                if (window.showStatus) showStatus(`SERVER_ERROR: ${res.status}`, "error");
+                return;
+            }
+
+            if (!res.ok || data.status === "error") {
+                if (window.showStatus) showStatus(data.message || "TAG_UPDATE_FAILURE", "error");
+            } else {
+                await this.loadTags(); 
+                if (window.showStatus) showStatus("PROJECT_TAGS_UPDATED", "success");
+            }
+        } catch (e) {
+            if (window.showStatus) showStatus("NETWORK_LINK_FAILURE", "error");
+        }
+    },
+    
+    loadTags: async function(selectedTag = null) {
+        const select = document.getElementById('add_tag');
+        if (!select) return [];
+
+        try {
+            const res = await fetch('/api/tags');
+            const data = await res.json();
+            const list = data.tags || [];
+
+            select.innerHTML = '<option value=""></option>';
+            list.forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t; 
+                opt.textContent = t;
+                if (selectedTag && t === selectedTag) opt.selected = true;
+                select.appendChild(opt);
+            });
+
+            const custom = document.createElement('option');
+            custom.value = 'custom'; 
+            custom.textContent = 'Custom...';
+            select.appendChild(custom);
+            
+            return list;
+        } catch (e) { return []; }
+    },
+
+    loadArchive: async function() {
+        const body = document.getElementById('archive_body');
+        if (!body) return;
+        try {
+            const res = await fetch('/api/entries');
+            const data = await res.json();
+            body.innerHTML = '';
+            
+            let list = Array.isArray(data) ? data : (data?.entries || []);
+
+            if (list.length === 0) {
+                body.innerHTML = '<tr><td colspan="5" style="text-align:center;">No entries found.</td></tr>';
+                return;
+            }
+
+            list.forEach(item => {
+                const row = document.createElement('tr');
+                const successCount = (item.findings || []).filter(f => f.status === 'Success').length;
+                const failCount = (item.findings || []).filter(f => f.status === 'Failure').length;
+                
+                let statusClass = 'status-grey';
+                if (successCount > 0) statusClass = 'status-green';
+                else if (failCount > 0) statusClass = 'status-red';
+                else if (item.findings?.length > 0) statusClass = 'status-blue';
+
+                row.innerHTML = `
+                    <td class="cell-rel">
+                        <div class="status-bar ${statusClass}"></div>
+                        <b style="color:#fff">${item.name}</b>
+                    </td>
+                    <td><span style="color:var(--accent)">${item.tag}</span></td>
+                    <td>${item.type || 'function'}</td>
+                    <td class="audit-text">UP: ${item.last_updated_timestamp}</td>
+                    <td>
+                        <button class="btn-alt" style="padding:2px 6px; font-size:9px;" onclick="Logic.editEntry('${item.name}')">EDIT</button>
+                        <button class="btn-warn" style="padding:2px 6px; font-size:9px;" onclick="Logic.deleteEntry('${item.name}')">DEL</button>
+                    </td>
+                `;
+                body.appendChild(row);
+            });
+        } catch (e) { console.error("LOAD_ARCH_FAIL", e); }
     },
 
     editEntry: async (name) => {
         const resp = await fetch(`/api/entries/${name}`);
         const data = await resp.json();
-        
-        // 1. Switch Tab
         UI.switchTab('add');
         
-        // 2. Lock Name
         const nameInp = document.getElementById('add_name');
         nameInp.value = data.name;
         nameInp.readOnly = true;
         nameInp.style.borderLeft = "3px solid var(--accent)";
 
-        // 3. Lock Tag (The specific fix you requested)
         const tagSel = document.getElementById('add_tag');
         if (tagSel) {
             tagSel.value = data.tag;
@@ -177,7 +281,10 @@ const Logic = {
 
     saveEntry: async () => {
         const nameVal = document.getElementById('add_name').value;
-        if (!nameVal) return;
+        if (!nameVal) {
+            if (window.showStatus) showStatus("NAME_REQUIRED", "error");
+            return;
+        }
 
         const payload = {
             name: nameVal,
@@ -199,20 +306,23 @@ const Logic = {
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(payload)
             });
-            const result = await resp.json();
-            
-            if (result.status === "success") {
-                if (window.StatusHandler) {
-                    StatusHandler.success("Entry Synchronized.");
-                } else {
-                    alert("Entry Synchronized.");
-                }
+
+            const text = await resp.text();
+            let data;
+            try { data = JSON.parse(text); } catch (e) {
+                if (window.showStatus) showStatus(`SERVER_ERROR: ${resp.status}`, "error");
+                return;
+            }
+
+            if (!resp.ok || data.status === "error") {
+                if (window.showStatus) showStatus(data.message || "SAVE_FAILURE", "error");
+            } else {
+                if (window.showStatus) showStatus("ENTRY_SYNCHRONIZED", "success");
                 UI.resetForm();
                 UI.switchTab('view');
             }
         } catch (e) {
-            console.error(e);
-            if (window.StatusHandler) StatusHandler.error("Save Failed.");
+            if (window.showStatus) showStatus("NETWORK_LINK_FAILURE", "error");
         }
     },
 
@@ -223,13 +333,61 @@ const Logic = {
     executeDelete: async (name) => {
         try {
             const resp = await fetch(`/api/entries/${name}`, { method: 'DELETE' });
-            const result = await resp.json();
-            if (result.status === "success") {
-                if (window.StatusHandler) StatusHandler.success(`Symbol ${name} purged.`);
-                Logic.loadEntries();
+            const text = await resp.text();
+            let data;
+            try { data = JSON.parse(text); } catch (e) {
+                if (window.showStatus) showStatus(`SERVER_ERROR: ${resp.status}`, "error");
+                return;
+            }
+
+            if (!resp.ok || data.status === "error") {
+                if (window.showStatus) showStatus(data.message || "PURGE_FAILURE", "error");
+            } else {
+                if (window.showStatus) showStatus(`SYMBOL_PURGED: ${name}`, "success");
+                Logic.loadArchive();
             }
         } catch (e) {
-            if (window.StatusHandler) StatusHandler.error("Purge Failed.");
+            if (window.showStatus) showStatus("NETWORK_LINK_FAILURE", "error");
+        }
+    },
+
+    saveSettings: async function() {
+        const proj = document.getElementById('set_proj_select').value;
+        const newProj = document.getElementById('set_proj_new').value;
+        const target = newProj || proj;
+
+        if (!target) {
+            if (window.showStatus) showStatus("PROJECT_NAME_REQUIRED", "error");
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/projects', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ project_name: target }) 
+            });
+            
+            const text = await res.text();
+            let data;
+            try { data = JSON.parse(text); } catch (e) {
+                if (window.showStatus) showStatus(`SERVER_ERROR: ${res.status}`, "error");
+                return;
+            }
+
+            if (res.ok && data.status !== "error") {
+                // Clear the 'new project' input if used
+                document.getElementById('set_proj_new').value = '';
+                
+                // Trigger an internal re-init to refresh the data without reload
+                await this.init(); 
+                
+                if (window.showStatus) showStatus(`PROJECT_LOADED: ${target}`, "success");
+            } else {
+                if (window.showStatus) showStatus(data.message || "PROJECT_SWITCH_FAILURE", "error");
+            }
+        } catch(e) {
+            if (window.showStatus) showStatus("NETWORK_LINK_FAILURE", "error");
         }
     }
 };
